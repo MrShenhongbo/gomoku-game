@@ -8,6 +8,7 @@ interface ControlPanelProps {
   onNewGame: () => void;
   onUndo: () => void;
   onGetHint: () => void;
+  onSurrender: () => void;
 }
 
 export function ControlPanel({
@@ -17,9 +18,11 @@ export function ControlPanel({
   onNewGame,
   onUndo,
   onGetHint,
+  onSurrender,
 }: ControlPanelProps) {
   const canUndo = gameState.move_count > 0 && gameState.status === 'Playing';
   const canGetHint = gameState.status === 'Playing' && !isLoading && !isGettingHint;
+  const canSurrender = gameState.status === 'Playing' && gameState.move_count > 0;
 
   return (
     <div className="control-panel">
@@ -39,6 +42,13 @@ export function ControlPanel({
         disabled={!canGetHint}
       >
         {isGettingHint ? '思考中...' : 'AI建议'}
+      </button>
+      <button
+        className="btn-surrender"
+        onClick={onSurrender}
+        disabled={isLoading || !canSurrender}
+      >
+        认输
       </button>
     </div>
   );

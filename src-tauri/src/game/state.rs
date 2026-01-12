@@ -129,6 +129,20 @@ impl GameStateInner {
             && self.current_player != self.player_stone
             && self.status == GameStatus::Playing
     }
+
+    pub fn surrender(&mut self) -> Result<(), String> {
+        if self.status != GameStatus::Playing {
+            return Err("游戏已结束".to_string());
+        }
+
+        // 当前玩家认输，对手获胜
+        self.status = match self.current_player {
+            Stone::Black => GameStatus::WhiteWin,
+            Stone::White => GameStatus::BlackWin,
+        };
+
+        Ok(())
+    }
 }
 
 impl Default for GameStateInner {

@@ -40,3 +40,7 @@ export async function getGameState(): Promise<GameSnapshot> {
 export async function getHint(): Promise<HintResult> {
   return invoke<HintResult>('get_hint');
 }
+
+export async function surrender(): Promise<GameSnapshot> {
+  return invoke<GameSnapshot>('surrender');
+}

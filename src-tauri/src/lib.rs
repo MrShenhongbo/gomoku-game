@@ -2,7 +2,7 @@ mod ai;
 mod commands;
 mod game;
 
-use commands::{ai_move, get_game_state, get_hint, make_move, new_game, undo_move};
+use commands::{ai_move, get_game_state, get_hint, make_move, new_game, surrender, undo_move};
 use game::GameState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -15,7 +15,8 @@ pub fn run() {
             ai_move,
             undo_move,
             get_game_state,
-            get_hint
+            get_hint,
+            surrender
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -169,6 +169,24 @@ export function useGame() {
     setHintPosition(null);
   }, []);
 
+  const handleSurrender = useCallback(async () => {
+    if (!gameState || isLoading || isAIThinking) return;
+    if (gameState.status !== 'Playing') return;
+
+    setIsLoading(true);
+    setError(null);
+    setHintPosition(null);
+
+    try {
+      const state = await api.surrender();
+      setGameState(state);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [gameState, isLoading, isAIThinking]);
+
   return {
     gameState,
     isLoading: isLoading,
@@ -180,6 +198,7 @@ export function useGame() {
     handleCellClick,
     handleUndo,
     handleGetHint,
+    handleSurrender,
     clearHint,
   };
 }

@@ -127,6 +127,13 @@ pub fn get_game_state(state: State<GameState>) -> GameSnapshot {
 }
 
 #[tauri::command]
+pub fn surrender(state: State<GameState>) -> Result<GameSnapshot, String> {
+    let mut game = state.inner.lock().unwrap();
+    game.surrender()?;
+    Ok(GameSnapshot::from(&*game))
+}
+
+#[tauri::command]
 pub async fn get_hint(state: State<'_, GameState>) -> Result<HintResult, String> {
     use crate::game::GameStatus;
 

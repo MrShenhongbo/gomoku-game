@@ -18,6 +18,7 @@ function App() {
     handleCellClick,
     handleUndo,
     handleGetHint,
+    handleSurrender,
   } = useGame();
 
   const [showModeSelector, setShowModeSelector] = useState(true);
@@ -71,6 +72,7 @@ function App() {
             onNewGame={handleNewGame}
             onUndo={handleUndo}
             onGetHint={handleGetHint}
+            onSurrender={handleSurrender}
           />
         </>
       )}
