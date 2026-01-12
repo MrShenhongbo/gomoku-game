@@ -5,6 +5,7 @@ import type {
   GameMode,
   GameSnapshot,
   HintResult,
+  MoveHistoryResult,
   MoveResult,
   RuleSet,
   Stone,
@@ -46,4 +47,8 @@ export async function getHint(): Promise<HintResult> {
 
 export async function surrender(): Promise<GameSnapshot> {
   return invoke<GameSnapshot>('surrender');
+}
+
+export async function getMoveHistory(): Promise<MoveHistoryResult> {
+  return invoke<MoveHistoryResult>('get_move_history');
 }

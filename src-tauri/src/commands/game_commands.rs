@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::ai::find_best_move;
-use crate::game::{AIDifficulty, GameMode, GameSnapshot, GameState, MoveResult, Position, RuleSet, Stone};
+use crate::game::{AIDifficulty, GameMode, GameSnapshot, GameState, Move, MoveResult, Position, RuleSet, Stone};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AIMoveResult {
@@ -14,6 +14,11 @@ pub struct AIMoveResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HintResult {
     pub position: Option<Position>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MoveHistoryResult {
+    pub moves: Vec<Move>,
 }
 
 #[tauri::command]
@@ -163,4 +168,12 @@ pub async fn get_hint(state: State<'_, GameState>) -> Result<HintResult, String>
     Ok(HintResult {
         position: suggested_pos,
     })
+}
+
+#[tauri::command]
+pub fn get_move_history(state: State<GameState>) -> MoveHistoryResult {
+    let game = state.inner.lock().unwrap();
+    MoveHistoryResult {
+        moves: game.move_history.clone(),
+    }
 }

@@ -31,6 +31,16 @@ export interface HintResult {
   position: Position | null;
 }
 
+export interface Move {
+  position: Position;
+  stone: Stone;
+  move_number: number;
+}
+
+export interface MoveHistoryResult {
+  moves: Move[];
+}
+
 export interface GameSnapshot {
   board: (Stone | null)[][];
   current_player: Stone;
