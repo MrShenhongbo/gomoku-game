@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-这是一个使用 Tauri 2 + React + Rust 构建的五子棋（Gomoku）桌面游戏应用。支持人人对战（PvP）和人机对战（PvAI）两种模式。
+这是一个使用 Tauri 2 + React + Rust 构建的五子棋（Gomoku）桌面游戏应用。支持多种游戏模式：人人对战（PvP）、人机对战（PvAI）、AI 观战（AIvAI）和残局练习。
 
 ## 常用命令
 
@@ -48,21 +48,23 @@ cargo clippy
 
 ### 前后端通信
 - 前端通过 `@tauri-apps/api/core` 的 `invoke` 函数调用 Rust 后端命令
-- 所有 Tauri 命令定义在 `src-tauri/src/commands/game_commands.rs`
+- Tauri 命令分布在 `src-tauri/src/commands/` 目录下
 - 前端 API 封装在 `src/api/gameApi.ts`
 
 ### 后端结构 (src-tauri/src/)
 
 ```
-├── lib.rs          # Tauri 应用入口，注册命令和状态
-├── commands/       # Tauri 命令处理
-│   └── game_commands.rs  # 游戏命令：new_game, make_move, ai_move, undo_move, get_game_state, get_hint
-├── game/           # 游戏核心逻辑
-│   ├── types.rs    # 类型定义：Stone, GameMode, AIDifficulty, GameStatus, Position, Move
-│   ├── board.rs    # 棋盘逻辑，15x15 棋盘，维护 stone_positions 加速候选位置计算
-│   ├── state.rs    # 游戏状态管理，使用 Mutex 保护
-│   └── rules.rs    # 胜负判定规则（含单元测试）
-└── ai/             # AI 实现
+├── lib.rs              # Tauri 应用入口，注册命令和状态
+├── commands/           # Tauri 命令处理
+│   ├── game_commands.rs    # 游戏命令：new_game, make_move, ai_move, undo_move, get_game_state, get_hint, surrender, get_move_history, export_game
+│   ├── puzzle_commands.rs  # 残局命令：get_puzzle_list, get_puzzle, check_puzzle_move
+│   └── analysis_commands.rs # 分析命令：analyze_position
+├── game/               # 游戏核心逻辑
+│   ├── types.rs        # 类型定义：Stone, GameMode, AIDifficulty, GameStatus, Position, Move, RuleSet
+│   ├── board.rs        # 棋盘逻辑，15x15 棋盘，维护 stone_positions 加速候选位置计算
+│   ├── state.rs        # 游戏状态管理，使用 Mutex 保护
+│   └── rules.rs        # 胜负判定规则 + 禁手检测（含单元测试）
+└── ai/                 # AI 实现
     ├── minimax.rs      # Minimax + Alpha-Beta 剪枝 + 置换表
     ├── evaluator.rs    # 棋局评估（按线扫描）+ 快速位置评估（用于走法排序）
     └── transposition.rs # Zobrist 哈希 + 置换表实现
@@ -71,18 +73,30 @@ cargo clippy
 ### 前端结构 (src/)
 
 ```
-├── App.tsx         # 主组件，管理游戏界面切换
+├── App.tsx             # 主组件，管理游戏界面切换
+├── App.css             # 全局样式 + CSS 主题变量
+├── contexts/
+│   └── ThemeContext.tsx # 主题上下文（经典/深色/护眼绿）
 ├── hooks/
-│   └── useGame.ts  # 游戏状态管理 Hook，处理 AI 回合触发、AI 建议
+│   ├── useGame.ts      # 游戏状态管理 Hook
+│   ├── useSound.ts     # 音效 Hook（Web Audio API）
+│   └── useKeyboardShortcuts.ts # 键盘快捷键 Hook
 ├── api/
-│   └── gameApi.ts  # Tauri 命令调用封装
+│   └── gameApi.ts      # Tauri 命令调用封装
 ├── types/
-│   └── game.ts     # TypeScript 类型定义，与 Rust 类型对应
-└── components/     # UI 组件（使用 React.memo 优化渲染）
-    ├── Board/      # 棋盘组件（Cell 使用 memo + useCallback，支持显示 AI 建议标记）
-    ├── GameInfo/   # 游戏信息显示
-    ├── ControlPanel/    # 控制面板（新游戏、悔棋、AI建议）
-    └── GameModeSelector/ # 游戏模式选择
+│   └── game.ts         # TypeScript 类型定义
+└── components/         # UI 组件
+    ├── Board/          # 棋盘组件（含坐标显示）
+    ├── GameInfo/       # 游戏信息显示
+    ├── ControlPanel/   # 控制面板（新游戏、悔棋、AI建议、认输）
+    ├── GameModeSelector/ # 游戏模式选择（含计时器、规则设置）
+    ├── ConfirmDialog/  # 确认对话框
+    ├── Settings/       # 设置面板（音效、主题）
+    ├── Timer/          # 计时器组件
+    ├── ReplayPanel/    # 复盘面板
+    ├── StatsPanel/     # 统计面板
+    ├── PuzzleMode/     # 残局练习模式
+    └── AnalysisPanel/  # AI 分析面板
 ```
 
 ### 关键设计
@@ -99,9 +113,21 @@ cargo clippy
 - 按线评估：`evaluate_board` 扫描 88 条线而非 225 个点，避免重复计算
 - 候选位置优化：`Board` 维护 `stone_positions` 列表，只遍历已落子位置的邻域；`undo_move` 使用 `swap_remove` 实现 O(1) 复杂度
 
+**禁手规则**：支持连珠规则（Renju），黑棋禁止三三、四四、长连。禁手检测在 `rules.rs` 中实现。
+
 **悔棋逻辑**：PvAI 模式下悔棋会撤销两步（玩家和 AI 各一步）。
 
 **AI 建议功能**：`get_hint` 命令复用 `find_best_move` 函数为当前玩家计算最佳落子位置，使用当前游戏的 AI 难度设置（PvP 模式默认 Medium）。建议位置在棋盘上显示为闪烁蓝色圆点，落子或悔棋后自动清除。
+
+**音效系统**：使用 Web Audio API 动态生成音效，无需外部音频文件。支持落子、获胜、失败三种音效。
+
+**主题系统**：使用 CSS 变量实现主题切换，通过 `ThemeContext` 管理状态，设置保存到 localStorage。
+
+**计时器**：支持两种模式 - 每步限时（perMove）和总时间（total），超时自动判负。
+
+**残局练习**：内置 12 道残局题目，分三个难度等级，支持提示和进度保存。
+
+**AI 分析**：实时分析当前局面，显示评估分数、推荐走法和关键点位（威胁/机会）。
 
 **类型映射**：Rust 枚举（如 `Stone::Black`）序列化为字符串（`"Black"`），前端使用联合类型对应。
 
@@ -109,3 +135,27 @@ cargo clippy
 - `Cell` 组件使用 `React.memo` 避免不必要重渲染
 - `winningPositions` 转为 Set 实现 O(1) 查找
 - 回调函数使用 `useCallback` 缓存，确保 memo 生效
+
+## 功能列表
+
+### 游戏模式
+- **双人对战 (PvP)**：两人轮流落子
+- **人机对战 (PvAI)**：与 AI 对战，可选难度和执子颜色
+- **AI 观战 (AIvAI)**：观看两个 AI 对弈，可调节速度
+- **残局练习**：12 道内置残局题目
+
+### 游戏功能
+- 悔棋、认输、新游戏
+- AI 落子建议
+- 计时器（每步限时/总时间）
+- 禁手规则（连珠）
+- 棋盘坐标显示
+- 对局复盘
+- 棋谱导出（JSON）
+- AI 局面分析
+
+### 系统功能
+- 音效（落子/获胜/失败）
+- 主题切换（经典/深色/护眼绿）
+- 游戏统计（胜负记录）
+- 键盘快捷键（Ctrl+Z 悔棋, Ctrl+N 新游戏, H 提示）
