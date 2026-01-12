@@ -14,9 +14,9 @@
       {
         "title": "五子棋",
         "width": 680,
-        "height": 700,
+        "height": 800,
         "minWidth": 600,
-        "minHeight": 650,
+        "minHeight": 750,
         "resizable": true,
         "fullscreen": false
       }

@@ -29,6 +29,7 @@ function App() {
     handleUndo,
     handleGetHint,
     handleSurrender,
+    fetchGameState,
   } = useGame();
 
   const { soundEnabled, toggleSound, playPlaceSound, playWinSound, playLoseSound } = useSound();
@@ -90,6 +91,7 @@ function App() {
     const makeAIMove = async () => {
       try {
         await api.aiMove();
+        await fetchGameState();
       } catch (e) {
         console.error('AI move error:', e);
       }
@@ -103,7 +105,7 @@ function App() {
         aivaiIntervalRef.current = null;
       }
     };
-  }, [gameState, aivaiConfig, aivaiPaused]);
+  }, [gameState, aivaiConfig, aivaiPaused, fetchGameState]);
 
   const handleStartGame = (
     mode: 'PvP' | 'PvAI' | 'AIvAI' | 'Puzzle',

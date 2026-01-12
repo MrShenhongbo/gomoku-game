@@ -201,5 +201,6 @@ export function useGame() {
     handleGetHint,
     handleSurrender,
     clearHint,
+    fetchGameState,
   };
 }

@@ -55,9 +55,14 @@ export function AnalysisPanel({ disabled }: AnalysisPanelProps) {
 
   if (isLoading) {
     return (
-      <div className="analysis-panel">
-        <div className="analysis-loading">分析中...</div>
-      </div>
+      <>
+        <button className="analysis-btn" disabled>分析中...</button>
+        <div className="analysis-modal-overlay">
+          <div className="analysis-panel">
+            <div className="analysis-loading">分析中...</div>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -66,7 +71,16 @@ export function AnalysisPanel({ disabled }: AnalysisPanelProps) {
   }
 
   return (
-    <div className="analysis-panel">
+    <>
+      <button
+        className="analysis-btn"
+        onClick={handleAnalyze}
+        disabled={disabled || isLoading}
+      >
+        AI 局面分析
+      </button>
+      <div className="analysis-modal-overlay" onClick={handleClose}>
+        <div className="analysis-panel" onClick={e => e.stopPropagation()}>
       <div className="analysis-header">
         <span className="analysis-title">AI 局面分析</span>
         <button className="analysis-close" onClick={handleClose}>
@@ -121,6 +135,8 @@ export function AnalysisPanel({ disabled }: AnalysisPanelProps) {
       >
         刷新分析
       </button>
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
