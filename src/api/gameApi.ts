@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   AIDifficulty,
   AIMoveResult,
+  AnalysisResult,
   ExportData,
   GameMode,
   GameSnapshot,
@@ -74,4 +75,8 @@ export async function checkPuzzleMove(
   moves: [number, number][]
 ): Promise<PuzzleCheckResult> {
   return invoke<PuzzleCheckResult>('check_puzzle_move', { id, moves });
+}
+
+export async function analyzePosition(): Promise<AnalysisResult> {
+  return invoke<AnalysisResult>('analyze_position');
 }

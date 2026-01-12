@@ -88,3 +88,22 @@ export interface PuzzleCheckResult {
   complete: boolean;
   message: string;
 }
+
+export interface CandidateMove {
+  position: Position;
+  score: number;
+  coord: string;
+}
+
+export interface ThreatPoint {
+  position: Position;
+  threat_type: string;
+  level: number;
+}
+
+export interface AnalysisResult {
+  board_score: number;
+  evaluation: string;
+  top_moves: CandidateMove[];
+  threat_points: ThreatPoint[];
+}

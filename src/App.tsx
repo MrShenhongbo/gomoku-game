@@ -7,6 +7,7 @@ import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 import { Settings } from './components/Settings/Settings';
 import { Timer } from './components/Timer/Timer';
 import { PuzzleMode } from './components/PuzzleMode/PuzzleMode';
+import { AnalysisPanel } from './components/AnalysisPanel/AnalysisPanel';
 import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSound } from './hooks/useSound';
@@ -249,6 +250,9 @@ function App() {
             onGetHint={handleGetHint}
             onSurrender={handleSurrenderClick}
           />
+          {!isAIvAI && gameState.status === 'Playing' && (
+            <AnalysisPanel disabled={isLoading || isAIThinking} />
+          )}
         </>
       )}
 
