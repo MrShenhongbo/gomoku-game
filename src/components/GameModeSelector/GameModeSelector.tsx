@@ -16,7 +16,7 @@ export interface AIvAIConfig {
 
 interface GameModeSelectorProps {
   onStartGame: (
-    mode: GameMode,
+    mode: GameMode | 'Puzzle',
     difficulty?: AIDifficulty,
     playerStone?: Stone,
     timerConfig?: TimerConfig,
@@ -74,6 +74,12 @@ export function GameModeSelector({ onStartGame }: GameModeSelectorProps) {
           onClick={() => setMode('AIvAI')}
         >
           AI观战
+        </button>
+        <button
+          className="mode-btn puzzle-btn"
+          onClick={() => onStartGame('Puzzle')}
+        >
+          残局练习
         </button>
       </div>
 

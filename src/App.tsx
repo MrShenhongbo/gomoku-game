@@ -6,6 +6,7 @@ import { GameModeSelector, TimerConfig, AIvAIConfig } from './components/GameMod
 import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 import { Settings } from './components/Settings/Settings';
 import { Timer } from './components/Timer/Timer';
+import { PuzzleMode } from './components/PuzzleMode/PuzzleMode';
 import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSound } from './hooks/useSound';
@@ -32,6 +33,7 @@ function App() {
   const { soundEnabled, toggleSound, playPlaceSound, playWinSound, playLoseSound } = useSound();
 
   const [showModeSelector, setShowModeSelector] = useState(true);
+  const [showPuzzleMode, setShowPuzzleMode] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [timerConfig, setTimerConfig] = useState<TimerConfig>({ mode: 'none', seconds: 30 });
   const [timerKey, setTimerKey] = useState(0);
@@ -103,13 +105,18 @@ function App() {
   }, [gameState, aivaiConfig, aivaiPaused]);
 
   const handleStartGame = (
-    mode: 'PvP' | 'PvAI' | 'AIvAI',
+    mode: 'PvP' | 'PvAI' | 'AIvAI' | 'Puzzle',
     difficulty?: 'Easy' | 'Medium' | 'Hard',
     playerStone?: 'Black' | 'White',
     timer?: TimerConfig,
     aivai?: AIvAIConfig,
     ruleSet?: 'Standard' | 'Renju'
   ) => {
+    if (mode === 'Puzzle') {
+      setShowPuzzleMode(true);
+      setShowModeSelector(false);
+      return;
+    }
     if (mode === 'AIvAI' && aivai) {
       // AIvAI 模式使用黑棋难度作为默认难度
       startNewGame(mode, aivai.blackDifficulty, 'Black', ruleSet);
@@ -133,6 +140,7 @@ function App() {
       setConfirmAction('newGame');
     } else {
       setShowModeSelector(true);
+      setShowPuzzleMode(false);
       setAivaiConfig(null);
     }
   }, [gameState]);
@@ -144,6 +152,7 @@ function App() {
   const handleConfirm = () => {
     if (confirmAction === 'newGame') {
       setShowModeSelector(true);
+      setShowPuzzleMode(false);
       setAivaiConfig(null);
     } else if (confirmAction === 'surrender') {
       handleSurrender();
@@ -163,13 +172,18 @@ function App() {
     setAivaiPaused((p) => !p);
   }, []);
 
+  const handlePuzzleBack = useCallback(() => {
+    setShowPuzzleMode(false);
+    setShowModeSelector(true);
+  }, []);
+
   // 键盘快捷键
   useKeyboardShortcuts({
     onUndo: handleUndo,
     onNewGame: handleNewGameClick,
     onHint: handleGetHint,
     onEscape: handleCancel,
-    enabled: !showModeSelector && !!gameState,
+    enabled: !showModeSelector && !showPuzzleMode && !!gameState,
   });
 
   if (!gameState) {
@@ -185,7 +199,9 @@ function App() {
 
       {error && <div className="error">{error}</div>}
 
-      {showModeSelector ? (
+      {showPuzzleMode ? (
+        <PuzzleMode onBack={handlePuzzleBack} />
+      ) : showModeSelector ? (
         <div className="mode-selector-wrapper">
           <GameModeSelector onStartGame={handleStartGame} />
         </div>

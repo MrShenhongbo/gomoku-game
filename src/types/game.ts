@@ -8,6 +8,8 @@ export type GameStatus = 'Playing' | 'BlackWin' | 'WhiteWin' | 'Draw';
 
 export type RuleSet = 'Standard' | 'Renju';
 
+export type PuzzleDifficulty = 'Easy' | 'Medium' | 'Hard';
+
 export interface Position {
   row: number;
   col: number;
@@ -62,3 +64,27 @@ export interface GameSnapshot {
 }
 
 export const BOARD_SIZE = 15;
+
+export interface Puzzle {
+  id: number;
+  name: string;
+  difficulty: PuzzleDifficulty;
+  description: string;
+  initial_stones: [number, number, string][];
+  player_stone: string;
+  solutions: [number, number][][];
+  hint: string;
+}
+
+export interface PuzzleListItem {
+  id: number;
+  name: string;
+  difficulty: PuzzleDifficulty;
+  description: string;
+}
+
+export interface PuzzleCheckResult {
+  correct: boolean;
+  complete: boolean;
+  message: string;
+}

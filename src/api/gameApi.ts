@@ -8,6 +8,9 @@ import type {
   HintResult,
   MoveHistoryResult,
   MoveResult,
+  Puzzle,
+  PuzzleCheckResult,
+  PuzzleListItem,
   RuleSet,
   Stone,
 } from '../types/game';
@@ -56,4 +59,19 @@ export async function getMoveHistory(): Promise<MoveHistoryResult> {
 
 export async function exportGame(): Promise<ExportData> {
   return invoke<ExportData>('export_game');
+}
+
+export async function getPuzzleList(): Promise<PuzzleListItem[]> {
+  return invoke<PuzzleListItem[]>('get_puzzle_list');
+}
+
+export async function getPuzzle(id: number): Promise<Puzzle | null> {
+  return invoke<Puzzle | null>('get_puzzle', { id });
+}
+
+export async function checkPuzzleMove(
+  id: number,
+  moves: [number, number][]
+): Promise<PuzzleCheckResult> {
+  return invoke<PuzzleCheckResult>('check_puzzle_move', { id, moves });
 }
