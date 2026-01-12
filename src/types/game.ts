@@ -1,6 +1,6 @@
 export type Stone = 'Black' | 'White';
 
-export type GameMode = 'PvP' | 'PvAI';
+export type GameMode = 'PvP' | 'PvAI' | 'AIvAI';
 
 export type AIDifficulty = 'Easy' | 'Medium' | 'Hard';
 

@@ -60,3 +60,37 @@ body {
   align-items: center;
   justify-content: center;
 }
+
+.aivai-controls {
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+}
+
+.aivai-btn {
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.aivai-btn.playing {
+  background: #ff9800;
+  color: white;
+}
+
+.aivai-btn.playing:hover {
+  background: #f57c00;
+}
+
+.aivai-btn.paused {
+  background: #4caf50;
+  color: white;
+}
+
+.aivai-btn.paused:hover {
+  background: #45a049;
+}

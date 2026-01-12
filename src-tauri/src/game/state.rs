@@ -125,9 +125,14 @@ impl GameStateInner {
     }
 
     pub fn is_ai_turn(&self) -> bool {
-        self.game_mode == GameMode::PvAI
-            && self.current_player != self.player_stone
-            && self.status == GameStatus::Playing
+        if self.status != GameStatus::Playing {
+            return false;
+        }
+        match self.game_mode {
+            GameMode::PvAI => self.current_player != self.player_stone,
+            GameMode::AIvAI => true, // AIvAI 模式下总是 AI 回合
+            GameMode::PvP => false,
+        }
     }
 
     pub fn surrender(&mut self) -> Result<(), String> {

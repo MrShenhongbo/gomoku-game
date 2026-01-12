@@ -21,6 +21,7 @@ impl Stone {
 pub enum GameMode {
     PvP,
     PvAI,
+    AIvAI,
 }
 
 /// AI 难度
