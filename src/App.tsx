@@ -12,6 +12,7 @@ import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSound } from './hooks/useSound';
 import * as api from './api/gameApi';
+import type { AnalysisResult } from './types/game';
 import './App.css';
 
 type ConfirmAction = 'newGame' | 'surrender' | null;
@@ -46,6 +47,11 @@ function App() {
   const [aivaiConfig, setAivaiConfig] = useState<AIvAIConfig | null>(null);
   const [aivaiPaused, setAivaiPaused] = useState(false);
   const aivaiIntervalRef = useRef<number | null>(null);
+
+  // 分析面板状态
+  const [showAnalysis, setShowAnalysis] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
   // 监听落子播放音效
   useEffect(() => {
@@ -107,6 +113,24 @@ function App() {
     };
   }, [gameState, aivaiConfig, aivaiPaused, fetchGameState]);
 
+  // 落子后自动刷新分析
+  useEffect(() => {
+    if (showAnalysis && gameState && gameState.move_count > 0 && !isAnalyzing) {
+      const doAnalysis = async () => {
+        setIsAnalyzing(true);
+        try {
+          const result = await api.analyzePosition();
+          setAnalysisResult(result);
+        } catch (e) {
+          console.error('Analysis error:', e);
+        } finally {
+          setIsAnalyzing(false);
+        }
+      };
+      doAnalysis();
+    }
+  }, [gameState?.move_count, showAnalysis]);
+
   const handleStartGame = (
     mode: 'PvP' | 'PvAI' | 'AIvAI' | 'Puzzle',
     difficulty?: 'Easy' | 'Medium' | 'Hard',
@@ -130,6 +154,8 @@ function App() {
       setAivaiConfig(null);
     }
     setShowModeSelector(false);
+    setShowAnalysis(false);
+    setAnalysisResult(null);
     prevMoveCountRef.current = 0;
     prevStatusRef.current = 'Playing';
     if (timer) {
@@ -145,6 +171,8 @@ function App() {
       setShowModeSelector(true);
       setShowPuzzleMode(false);
       setAivaiConfig(null);
+      setShowAnalysis(false);
+      setAnalysisResult(null);
     }
   }, [gameState]);
 
@@ -157,6 +185,8 @@ function App() {
       setShowModeSelector(true);
       setShowPuzzleMode(false);
       setAivaiConfig(null);
+      setShowAnalysis(false);
+      setAnalysisResult(null);
     } else if (confirmAction === 'surrender') {
       handleSurrender();
     }
@@ -178,6 +208,38 @@ function App() {
   const handlePuzzleBack = useCallback(() => {
     setShowPuzzleMode(false);
     setShowModeSelector(true);
+  }, []);
+
+  // 分析功能
+  const handleAnalysis = useCallback(async () => {
+    if (showAnalysis) {
+      // 如果已打开，执行刷新分析
+      setIsAnalyzing(true);
+      try {
+        const result = await api.analyzePosition();
+        setAnalysisResult(result);
+      } catch (e) {
+        console.error('Analysis error:', e);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    } else {
+      // 首次打开，执行分析
+      setShowAnalysis(true);
+      setIsAnalyzing(true);
+      try {
+        const result = await api.analyzePosition();
+        setAnalysisResult(result);
+      } catch (e) {
+        console.error('Analysis error:', e);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }
+  }, [showAnalysis]);
+
+  const handleAnalysisClose = useCallback(() => {
+    setShowAnalysis(false);
   }, []);
 
   // 键盘快捷键
@@ -209,53 +271,60 @@ function App() {
           <GameModeSelector onStartGame={handleStartGame} />
         </div>
       ) : (
-        <>
-          <GameInfo
-            gameState={gameState}
-            isLoading={isLoading}
-            isAIThinking={isAIThinking}
-          />
-          {!isAIvAI && (
-            <Timer
-              key={timerKey}
-              mode={timerConfig.mode}
-              seconds={timerConfig.seconds}
-              currentPlayer={gameState.current_player}
-              isPlaying={gameState.status === 'Playing' && !isLoading && !isAIThinking}
-              onTimeout={handleTimeout}
+        <div className="game-layout">
+          <div className="game-main">
+            <GameInfo
+              gameState={gameState}
+              isLoading={isLoading}
+              isAIThinking={isAIThinking}
             />
-          )}
-          {isAIvAI && gameState.status === 'Playing' && (
-            <div className="aivai-controls">
-              <button
-                className={`aivai-btn ${aivaiPaused ? 'paused' : 'playing'}`}
-                onClick={handleTogglePause}
-              >
-                {aivaiPaused ? '▶ 继续' : '⏸ 暂停'}
-              </button>
-            </div>
-          )}
-          <Board
-            board={gameState.board}
-            lastMove={gameState.last_move}
-            winningPositions={gameState.winning_positions}
-            hintPosition={hintPosition}
-            onCellClick={handleCellClick}
-            disabled={isLoading || gameState.status !== 'Playing' || isAIvAI}
+            {!isAIvAI && (
+              <Timer
+                key={timerKey}
+                mode={timerConfig.mode}
+                seconds={timerConfig.seconds}
+                currentPlayer={gameState.current_player}
+                isPlaying={gameState.status === 'Playing' && !isLoading && !isAIThinking}
+                onTimeout={handleTimeout}
+              />
+            )}
+            {isAIvAI && gameState.status === 'Playing' && (
+              <div className="aivai-controls">
+                <button
+                  className={`aivai-btn ${aivaiPaused ? 'paused' : 'playing'}`}
+                  onClick={handleTogglePause}
+                >
+                  {aivaiPaused ? '▶ 继续' : '⏸ 暂停'}
+                </button>
+              </div>
+            )}
+            <Board
+              board={gameState.board}
+              lastMove={gameState.last_move}
+              winningPositions={gameState.winning_positions}
+              hintPosition={hintPosition}
+              onCellClick={handleCellClick}
+              disabled={isLoading || gameState.status !== 'Playing' || isAIvAI}
+            />
+            <ControlPanel
+              gameState={gameState}
+              isLoading={isLoading}
+              isGettingHint={isGettingHint}
+              isAnalyzing={isAnalyzing}
+              onNewGame={handleNewGameClick}
+              onUndo={handleUndo}
+              onGetHint={handleGetHint}
+              onSurrender={handleSurrenderClick}
+              onAnalysis={handleAnalysis}
+            />
+          </div>
+          <AnalysisPanel
+            isOpen={showAnalysis}
+            isLoading={isAnalyzing}
+            analysis={analysisResult}
+            onClose={handleAnalysisClose}
           />
-          <ControlPanel
-            gameState={gameState}
-            isLoading={isLoading}
-            isGettingHint={isGettingHint}
-            onNewGame={handleNewGameClick}
-            onUndo={handleUndo}
-            onGetHint={handleGetHint}
-            onSurrender={handleSurrenderClick}
-          />
-          {!isAIvAI && gameState.status === 'Playing' && (
-            <AnalysisPanel disabled={isLoading || isAIThinking} />
-          )}
-        </>
+        </div>
       )}
 
       {confirmAction === 'newGame' && (

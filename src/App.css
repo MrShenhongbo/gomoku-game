@@ -40,12 +40,25 @@ body {
 
 .app {
   height: 100%;
-  max-width: 560px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.game-layout {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex: 1;
+}
+
+.game-main {
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
 }
 
 .title {

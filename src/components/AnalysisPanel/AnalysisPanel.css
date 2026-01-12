@@ -1,23 +1,10 @@
-.analysis-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.analysis-panel {
-  background: rgba(255, 255, 255, 0.98);
+.analysis-sidebar {
+  width: 280px;
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
   padding: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  max-width: 400px;
-  width: 90%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
 }
 
 .analysis-header {
@@ -197,7 +184,14 @@
   color: #666;
 }
 
-.analysis-btn {
+.analysis-empty {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.analysis-refresh-btn {
   display: block;
   width: 100%;
   padding: 8px;
@@ -212,11 +206,11 @@
   transition: background 0.2s ease;
 }
 
-.analysis-btn:hover {
+.analysis-refresh-btn:hover {
   background: #7b1fa2;
 }
 
-.analysis-btn:disabled {
+.analysis-refresh-btn:disabled {
   background: #ccc;
   cursor: not-allowed;
 }

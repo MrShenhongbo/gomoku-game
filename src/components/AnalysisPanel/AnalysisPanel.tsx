@@ -1,34 +1,19 @@
-import { useState } from 'react';
-import { analyzePosition } from '../../api/gameApi';
 import type { AnalysisResult } from '../../types/game';
 import './AnalysisPanel.css';
 
 interface AnalysisPanelProps {
-  disabled: boolean;
+  isOpen: boolean;
+  isLoading: boolean;
+  analysis: AnalysisResult | null;
+  onClose: () => void;
 }
 
-export function AnalysisPanel({ disabled }: AnalysisPanelProps) {
-  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPanel, setShowPanel] = useState(false);
-
-  const handleAnalyze = async () => {
-    setIsLoading(true);
-    try {
-      const result = await analyzePosition();
-      setAnalysis(result);
-      setShowPanel(true);
-    } catch (e) {
-      console.error('Analysis error:', e);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleClose = () => {
-    setShowPanel(false);
-  };
-
+export function AnalysisPanel({
+  isOpen,
+  isLoading,
+  analysis,
+  onClose,
+}: AnalysisPanelProps) {
   const getEvaluationClass = (evaluation: string) => {
     if (evaluation.includes('优')) return 'advantage';
     if (evaluation.includes('劣')) return 'disadvantage';
@@ -41,102 +26,66 @@ export function AnalysisPanel({ disabled }: AnalysisPanelProps) {
     return 'neutral';
   };
 
-  if (!showPanel) {
-    return (
-      <button
-        className="analysis-btn"
-        onClick={handleAnalyze}
-        disabled={disabled || isLoading}
-      >
-        {isLoading ? '分析中...' : 'AI 局面分析'}
-      </button>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <>
-        <button className="analysis-btn" disabled>分析中...</button>
-        <div className="analysis-modal-overlay">
-          <div className="analysis-panel">
-            <div className="analysis-loading">分析中...</div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  if (!analysis) {
+  if (!isOpen) {
     return null;
   }
 
   return (
-    <>
-      <button
-        className="analysis-btn"
-        onClick={handleAnalyze}
-        disabled={disabled || isLoading}
-      >
-        AI 局面分析
-      </button>
-      <div className="analysis-modal-overlay" onClick={handleClose}>
-        <div className="analysis-panel" onClick={e => e.stopPropagation()}>
+    <div className="analysis-sidebar">
       <div className="analysis-header">
         <span className="analysis-title">AI 局面分析</span>
-        <button className="analysis-close" onClick={handleClose}>
+        <button className="analysis-close" onClick={onClose}>
           ×
         </button>
       </div>
 
-      <div className="analysis-score">
-        <span className={`score-value ${getScoreClass(analysis.board_score)}`}>
-          {analysis.board_score > 0 ? '+' : ''}{analysis.board_score}
-        </span>
-        <span className={`evaluation-badge ${getEvaluationClass(analysis.evaluation)}`}>
-          {analysis.evaluation}
-        </span>
-      </div>
-
-      <div className="analysis-section">
-        <div className="section-title">推荐走法</div>
-        <div className="top-moves">
-          {analysis.top_moves.map((move, index) => (
-            <div key={`${move.position.row}-${move.position.col}`} className="move-item">
-              <span className={`move-rank rank-${index + 1}`}>{index + 1}</span>
-              <span className="move-coord">{move.coord}</span>
-              <span className="move-score">评分: {move.score}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {analysis.threat_points.length > 0 && (
-        <div className="analysis-section">
-          <div className="section-title">关键点位</div>
-          <div className="threat-list">
-            {analysis.threat_points.slice(0, 8).map((point, index) => (
-              <span
-                key={`${point.position.row}-${point.position.col}-${index}`}
-                className={`threat-item ${point.threat_type} level-${point.level}`}
-              >
-                {String.fromCharCode(65 + point.position.col)}
-                {15 - point.position.row}
-                {point.threat_type === 'threat' ? ' ⚠' : ' ★'}
-              </span>
-            ))}
+      {isLoading ? (
+        <div className="analysis-loading">分析中...</div>
+      ) : analysis ? (
+        <>
+          <div className="analysis-score">
+            <span className={`score-value ${getScoreClass(analysis.board_score)}`}>
+              {analysis.board_score > 0 ? '+' : ''}{analysis.board_score}
+            </span>
+            <span className={`evaluation-badge ${getEvaluationClass(analysis.evaluation)}`}>
+              {analysis.evaluation}
+            </span>
           </div>
-        </div>
-      )}
 
-      <button
-        className="analysis-btn"
-        onClick={handleAnalyze}
-        disabled={disabled || isLoading}
-      >
-        刷新分析
-      </button>
-        </div>
-      </div>
-    </>
+          <div className="analysis-section">
+            <div className="section-title">推荐走法</div>
+            <div className="top-moves">
+              {analysis.top_moves.map((move, index) => (
+                <div key={`${move.position.row}-${move.position.col}`} className="move-item">
+                  <span className={`move-rank rank-${index + 1}`}>{index + 1}</span>
+                  <span className="move-coord">{move.coord}</span>
+                  <span className="move-score">评分: {move.score}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {analysis.threat_points.length > 0 && (
+            <div className="analysis-section">
+              <div className="section-title">关键点位</div>
+              <div className="threat-list">
+                {analysis.threat_points.slice(0, 8).map((point, index) => (
+                  <span
+                    key={`${point.position.row}-${point.position.col}-${index}`}
+                    className={`threat-item ${point.threat_type} level-${point.level}`}
+                  >
+                    {String.fromCharCode(65 + point.position.col)}
+                    {15 - point.position.row}
+                    {point.threat_type === 'threat' ? ' ⚠' : ' ★'}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="analysis-empty">等待分析...</div>
+      )}
+    </div>
   );
 }

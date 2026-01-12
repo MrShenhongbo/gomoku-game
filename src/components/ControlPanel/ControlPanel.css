@@ -56,3 +56,12 @@
 .btn-hint:hover:not(:disabled) {
   background: #1976d2;
 }
+
+.btn-analysis {
+  background: #9c27b0;
+  color: white;
+}
+
+.btn-analysis:hover:not(:disabled) {
+  background: #7b1fa2;
+}
