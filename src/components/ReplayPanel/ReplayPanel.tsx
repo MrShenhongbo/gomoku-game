@@ -83,6 +83,10 @@ export function ReplayPanel({ moves, currentStep, onStepChange, onClose }: Repla
           </div>
         ))}
       </div>
+
+      <button className="replay-back-btn" onClick={onClose}>
+        ← 退出复盘
+      </button>
     </div>
   );
 }

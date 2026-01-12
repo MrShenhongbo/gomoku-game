@@ -73,7 +73,7 @@ export function GameModeSelector({ onStartGame }: GameModeSelectorProps) {
           className={`mode-btn ${mode === 'AIvAI' ? 'active' : ''}`}
           onClick={() => setMode('AIvAI')}
         >
-          AI观战
+          AI对战
         </button>
         <button
           className="mode-btn puzzle-btn"

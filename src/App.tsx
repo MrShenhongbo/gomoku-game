@@ -8,11 +8,14 @@ import { Settings } from './components/Settings/Settings';
 import { Timer } from './components/Timer/Timer';
 import { PuzzleMode } from './components/PuzzleMode/PuzzleMode';
 import { AnalysisPanel } from './components/AnalysisPanel/AnalysisPanel';
+import { ReplayPanel } from './components/ReplayPanel/ReplayPanel';
+import { GameHistory } from './components/GameHistory/GameHistory';
 import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSound } from './hooks/useSound';
 import * as api from './api/gameApi';
-import type { AnalysisResult } from './types/game';
+import type { AnalysisResult, GameRecord, Move, Position, Stone } from './types/game';
+import { saveGameRecord, calculateQualityScore, formatDate } from './utils/gameHistory';
 import './App.css';
 
 type ConfirmAction = 'newGame' | 'surrender' | null;
@@ -53,7 +56,17 @@ function App() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
 
-  // 监听落子播放音效
+  // 复盘状态
+  const [showReplay, setShowReplay] = useState(false);
+  const [replayMoves, setReplayMoves] = useState<Move[]>([]);
+  const [replayStep, setReplayStep] = useState(0);
+
+  // 对局记录状态
+  const [showHistory, setShowHistory] = useState(false);
+  const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+  const gameRecordSavedRef = useRef(false);
+
+  // 监听落子播放音效 + 游戏结束保存记录
   useEffect(() => {
     if (!gameState) return;
 
@@ -63,8 +76,44 @@ function App() {
     }
     prevMoveCountRef.current = gameState.move_count;
 
-    // 游戏结束音效
+    // 游戏结束音效 + 保存记录
     if (prevStatusRef.current === 'Playing' && gameState.status !== 'Playing') {
+      // 保存对局记录
+      if (!gameRecordSavedRef.current && gameState.move_count > 0) {
+        const saveRecord = async () => {
+          try {
+            const historyResult = await api.getMoveHistory();
+            const duration = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : undefined;
+            const qualityScore = calculateQualityScore(
+              historyResult.moves,
+              gameState.status,
+              gameState.game_mode,
+              gameState.ai_difficulty,
+              gameState.player_stone
+            );
+            const record: GameRecord = {
+              id: Date.now().toString(),
+              date: formatDate(new Date()),
+              gameMode: gameState.game_mode,
+              ruleSet: gameState.rule_set,
+              result: gameState.status,
+              playerStone: gameState.game_mode === 'PvAI' ? gameState.player_stone : undefined,
+              aiDifficulty: gameState.game_mode === 'PvAI' ? gameState.ai_difficulty : undefined,
+              moves: historyResult.moves,
+              moveCount: gameState.move_count,
+              qualityScore,
+              duration,
+            };
+            saveGameRecord(record);
+            gameRecordSavedRef.current = true;
+          } catch (e) {
+            console.error('Failed to save game record:', e);
+          }
+        };
+        saveRecord();
+      }
+
+      // 音效
       if (gameState.status === 'Draw') {
         // 平局不播放音效
       } else if (
@@ -81,7 +130,7 @@ function App() {
       }
     }
     prevStatusRef.current = gameState.status;
-  }, [gameState, playPlaceSound, playWinSound, playLoseSound]);
+  }, [gameState, playPlaceSound, playWinSound, playLoseSound, gameStartTime]);
 
   // AIvAI 自动对弈
   useEffect(() => {
@@ -158,6 +207,8 @@ function App() {
     setAnalysisResult(null);
     prevMoveCountRef.current = 0;
     prevStatusRef.current = 'Playing';
+    setGameStartTime(Date.now());
+    gameRecordSavedRef.current = false;
     if (timer) {
       setTimerConfig(timer);
       setTimerKey((k) => k + 1);
@@ -242,6 +293,58 @@ function App() {
     setShowAnalysis(false);
   }, []);
 
+  // 复盘功能
+  const handleReplay = useCallback(async () => {
+    try {
+      const result = await api.getMoveHistory();
+      setReplayMoves(result.moves);
+      setReplayStep(result.moves.length);
+      setShowReplay(true);
+    } catch (e) {
+      console.error('Failed to get move history:', e);
+    }
+  }, []);
+
+  const handleReplayStepChange = useCallback((step: number) => {
+    setReplayStep(step);
+  }, []);
+
+  const handleReplayClose = useCallback(() => {
+    setShowReplay(false);
+    setReplayMoves([]);
+    setReplayStep(0);
+  }, []);
+
+  // 从历史记录复盘
+  const handleHistoryReplay = useCallback((record: GameRecord) => {
+    setReplayMoves(record.moves);
+    setReplayStep(record.moves.length);
+    setShowReplay(true);
+    setShowHistory(false);
+  }, []);
+
+  const handleShowHistory = useCallback(() => {
+    setShowHistory(true);
+  }, []);
+
+  const handleHistoryBack = useCallback(() => {
+    setShowHistory(false);
+  }, []);
+
+  const getReplayBoard = useCallback((step: number): (Stone | null)[][] => {
+    const board: (Stone | null)[][] = Array(15).fill(null).map(() => Array(15).fill(null));
+    for (let i = 0; i < step && i < replayMoves.length; i++) {
+      const move = replayMoves[i];
+      board[move.position.row][move.position.col] = move.stone;
+    }
+    return board;
+  }, [replayMoves]);
+
+  const getReplayLastMove = useCallback((step: number): Position | null => {
+    if (step === 0 || replayMoves.length === 0) return null;
+    return replayMoves[step - 1].position;
+  }, [replayMoves]);
+
   // 键盘快捷键
   useKeyboardShortcuts({
     onUndo: handleUndo,
@@ -260,12 +363,42 @@ function App() {
   return (
     <div className="app">
       <h1 className="title">五子棋</h1>
-      <Settings soundEnabled={soundEnabled} onToggleSound={toggleSound} />
+      <Settings
+        soundEnabled={soundEnabled}
+        onToggleSound={toggleSound}
+        showHistoryBtn={showModeSelector && !showHistory && !showPuzzleMode}
+        onShowHistory={handleShowHistory}
+      />
 
       {error && <div className="error">{error}</div>}
 
       {showPuzzleMode ? (
         <PuzzleMode onBack={handlePuzzleBack} />
+      ) : showHistory ? (
+        <GameHistory onBack={handleHistoryBack} onReplay={handleHistoryReplay} />
+      ) : showReplay ? (
+        <div className="game-layout replay-layout">
+          <div className="game-main replay-main">
+            <Board
+              board={getReplayBoard(replayStep)}
+              lastMove={getReplayLastMove(replayStep)}
+              winningPositions={null}
+              hintPosition={null}
+              onCellClick={() => {}}
+              disabled={true}
+            />
+          </div>
+          <ReplayPanel
+            moves={replayMoves.map(m => ({
+              position: m.position,
+              stone: m.stone,
+              moveNumber: m.move_number,
+            }))}
+            currentStep={replayStep}
+            onStepChange={handleReplayStepChange}
+            onClose={handleReplayClose}
+          />
+        </div>
       ) : showModeSelector ? (
         <div className="mode-selector-wrapper">
           <GameModeSelector onStartGame={handleStartGame} />
@@ -299,12 +432,12 @@ function App() {
               </div>
             )}
             <Board
-              board={gameState.board}
-              lastMove={gameState.last_move}
-              winningPositions={gameState.winning_positions}
-              hintPosition={hintPosition}
+              board={showReplay ? getReplayBoard(replayStep) : gameState.board}
+              lastMove={showReplay ? getReplayLastMove(replayStep) : gameState.last_move}
+              winningPositions={showReplay ? null : gameState.winning_positions}
+              hintPosition={showReplay ? null : hintPosition}
               onCellClick={handleCellClick}
-              disabled={isLoading || gameState.status !== 'Playing' || isAIvAI}
+              disabled={isLoading || gameState.status !== 'Playing' || isAIvAI || showReplay}
             />
             <ControlPanel
               gameState={gameState}
@@ -316,6 +449,7 @@ function App() {
               onGetHint={handleGetHint}
               onSurrender={handleSurrenderClick}
               onAnalysis={handleAnalysis}
+              onReplay={handleReplay}
             />
           </div>
           <AnalysisPanel
@@ -324,6 +458,18 @@ function App() {
             analysis={analysisResult}
             onClose={handleAnalysisClose}
           />
+          {showReplay && (
+            <ReplayPanel
+              moves={replayMoves.map(m => ({
+                position: m.position,
+                stone: m.stone,
+                moveNumber: m.move_number,
+              }))}
+              currentStep={replayStep}
+              onStepChange={handleReplayStepChange}
+              onClose={handleReplayClose}
+            />
+          )}
         </div>
       )}
 

@@ -5,6 +5,8 @@ import './Settings.css';
 interface SettingsProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
+  showHistoryBtn?: boolean;
+  onShowHistory?: () => void;
 }
 
 const THEME_LABELS: Record<Theme, string> = {
@@ -13,7 +15,7 @@ const THEME_LABELS: Record<Theme, string> = {
   green: '🌿',
 };
 
-export function Settings({ soundEnabled, onToggleSound }: SettingsProps) {
+export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHistory }: SettingsProps) {
   const { theme, setTheme } = useTheme();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
 
@@ -28,6 +30,15 @@ export function Settings({ soundEnabled, onToggleSound }: SettingsProps) {
 
   return (
     <div className="settings">
+      {showHistoryBtn && onShowHistory && (
+        <button
+          className="settings-btn history-btn"
+          onClick={onShowHistory}
+          title="对局记录"
+        >
+          📋
+        </button>
+      )}
       <button
         className={`settings-btn sound-btn ${soundEnabled ? 'on' : 'off'}`}
         onClick={onToggleSound}

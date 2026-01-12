@@ -107,3 +107,18 @@ export interface AnalysisResult {
   top_moves: CandidateMove[];
   threat_points: ThreatPoint[];
 }
+
+// 对局记录
+export interface GameRecord {
+  id: string;
+  date: string;
+  gameMode: GameMode;
+  ruleSet: RuleSet;
+  result: GameStatus;
+  playerStone?: Stone;
+  aiDifficulty?: AIDifficulty;
+  moves: Move[];
+  moveCount: number;
+  qualityScore: number;
+  duration?: number;
+}

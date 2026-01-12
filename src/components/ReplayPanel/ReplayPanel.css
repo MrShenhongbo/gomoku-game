@@ -1,11 +1,13 @@
 .replay-panel {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 8px;
-  padding: 12px;
+  padding: 15px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  max-height: 300px;
+  width: 200px;
+  height: 480px;
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 .replay-header {
@@ -74,8 +76,8 @@
   overflow-y: auto;
   display: flex;
   flex-wrap: wrap;
+  align-content: flex-start;
   gap: 4px;
-  max-height: 150px;
 }
 
 .move-item {
@@ -125,4 +127,21 @@
 
 .move-pos {
   font-family: monospace;
+}
+
+.replay-back-btn {
+  margin-top: 12px;
+  padding: 10px 20px;
+  background: #5c6bc0;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.replay-back-btn:hover {
+  background: #3f51b5;
 }

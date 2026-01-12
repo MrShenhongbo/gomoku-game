@@ -11,6 +11,7 @@ interface ControlPanelProps {
   onGetHint: () => void;
   onSurrender: () => void;
   onAnalysis: () => void;
+  onReplay: () => void;
 }
 
 export function ControlPanel({
@@ -23,11 +24,13 @@ export function ControlPanel({
   onGetHint,
   onSurrender,
   onAnalysis,
+  onReplay,
 }: ControlPanelProps) {
   const canUndo = gameState.move_count > 0 && gameState.status === 'Playing';
   const canGetHint = gameState.status === 'Playing' && !isLoading && !isGettingHint;
   const canSurrender = gameState.status === 'Playing' && gameState.move_count > 0;
   const canAnalyze = gameState.status === 'Playing' && !isLoading && !isAnalyzing;
+  const canReplay = gameState.move_count > 0 && gameState.status !== 'Playing';
 
   return (
     <div className="control-panel">
@@ -61,6 +64,13 @@ export function ControlPanel({
         disabled={isLoading || !canSurrender}
       >
         认输
+      </button>
+      <button
+        className="btn-replay"
+        onClick={onReplay}
+        disabled={!canReplay}
+      >
+        复盘
       </button>
     </div>
   );

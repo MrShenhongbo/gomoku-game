@@ -130,3 +130,23 @@ body {
 .aivai-btn.paused:hover {
   background: #45a049;
 }
+
+.replay-mode-hint {
+  text-align: center;
+  color: white;
+  font-size: 1rem;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+/* 复盘模式布局 */
+.replay-layout {
+  align-items: center;
+  margin-top: 40px;
+}
+
+.replay-main {
+  flex-shrink: 0;
+}
