@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Board } from './components/Board/Board';
 import { GameInfo } from './components/GameInfo/GameInfo';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
 import { GameModeSelector } from './components/GameModeSelector/GameModeSelector';
 import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 import { useGame } from './hooks/useGame';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import './App.css';
 
 type ConfirmAction = 'newGame' | 'surrender' | null;
@@ -36,14 +37,14 @@ function App() {
     setShowModeSelector(false);
   };
 
-  const handleNewGameClick = () => {
+  const handleNewGameClick = useCallback(() => {
     // 如果游戏进行中且有落子，显示确认对话框
     if (gameState && gameState.move_count > 0 && gameState.status === 'Playing') {
       setConfirmAction('newGame');
     } else {
       setShowModeSelector(true);
     }
-  };
+  }, [gameState]);
 
   const handleSurrenderClick = () => {
     setConfirmAction('surrender');
@@ -58,9 +59,18 @@ function App() {
     setConfirmAction(null);
   };
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setConfirmAction(null);
-  };
+  }, []);
+
+  // 键盘快捷键
+  useKeyboardShortcuts({
+    onUndo: handleUndo,
+    onNewGame: handleNewGameClick,
+    onHint: handleGetHint,
+    onEscape: handleCancel,
+    enabled: !showModeSelector && !!gameState,
+  });
 
   if (!gameState) {
     return <div className="loading">加载中...</div>;
