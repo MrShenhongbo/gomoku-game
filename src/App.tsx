@@ -2,9 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Board } from './components/Board/Board';
 import { GameInfo } from './components/GameInfo/GameInfo';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
-import { GameModeSelector } from './components/GameModeSelector/GameModeSelector';
+import { GameModeSelector, TimerConfig } from './components/GameModeSelector/GameModeSelector';
 import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 import { Settings } from './components/Settings/Settings';
+import { Timer } from './components/Timer/Timer';
 import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSound } from './hooks/useSound';
@@ -31,6 +32,8 @@ function App() {
 
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const [timerConfig, setTimerConfig] = useState<TimerConfig>({ mode: 'none', seconds: 30 });
+  const [timerKey, setTimerKey] = useState(0);
   const prevMoveCountRef = useRef(0);
   const prevStatusRef = useRef<string | null>(null);
 
@@ -67,12 +70,17 @@ function App() {
   const handleStartGame = (
     mode: 'PvP' | 'PvAI',
     difficulty?: 'Easy' | 'Medium' | 'Hard',
-    playerStone?: 'Black' | 'White'
+    playerStone?: 'Black' | 'White',
+    timer?: TimerConfig
   ) => {
     startNewGame(mode, difficulty, playerStone);
     setShowModeSelector(false);
     prevMoveCountRef.current = 0;
     prevStatusRef.current = 'Playing';
+    if (timer) {
+      setTimerConfig(timer);
+      setTimerKey((k) => k + 1); // 重置计时器
+    }
   };
 
   const handleNewGameClick = useCallback(() => {
@@ -100,6 +108,11 @@ function App() {
   const handleCancel = useCallback(() => {
     setConfirmAction(null);
   }, []);
+
+  const handleTimeout = useCallback(() => {
+    // 超时判负，当前玩家认输
+    handleSurrender();
+  }, [handleSurrender]);
 
   // 键盘快捷键
   useKeyboardShortcuts({
@@ -131,6 +144,14 @@ function App() {
             gameState={gameState}
             isLoading={isLoading}
             isAIThinking={isAIThinking}
+          />
+          <Timer
+            key={timerKey}
+            mode={timerConfig.mode}
+            seconds={timerConfig.seconds}
+            currentPlayer={gameState.current_player}
+            isPlaying={gameState.status === 'Playing' && !isLoading && !isAIThinking}
+            onTimeout={handleTimeout}
           />
           <Board
             board={gameState.board}

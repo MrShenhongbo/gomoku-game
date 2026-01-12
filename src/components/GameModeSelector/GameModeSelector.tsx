@@ -1,12 +1,19 @@
 import { useState } from 'react';
 import type { AIDifficulty, GameMode, Stone } from '../../types/game';
+import type { TimerMode } from '../Timer/Timer';
 import './GameModeSelector.css';
+
+export interface TimerConfig {
+  mode: TimerMode;
+  seconds: number;
+}
 
 interface GameModeSelectorProps {
   onStartGame: (
     mode: GameMode,
     difficulty?: AIDifficulty,
-    playerStone?: Stone
+    playerStone?: Stone,
+    timerConfig?: TimerConfig
   ) => void;
 }
 
@@ -14,12 +21,15 @@ export function GameModeSelector({ onStartGame }: GameModeSelectorProps) {
   const [mode, setMode] = useState<GameMode>('PvP');
   const [difficulty, setDifficulty] = useState<AIDifficulty>('Medium');
   const [playerStone, setPlayerStone] = useState<Stone>('Black');
+  const [timerMode, setTimerMode] = useState<TimerMode>('none');
+  const [timerSeconds, setTimerSeconds] = useState(30);
 
   const handleStart = () => {
+    const timerConfig: TimerConfig = { mode: timerMode, seconds: timerSeconds };
     if (mode === 'PvAI') {
-      onStartGame(mode, difficulty, playerStone);
+      onStartGame(mode, difficulty, playerStone, timerConfig);
     } else {
-      onStartGame(mode);
+      onStartGame(mode, undefined, undefined, timerConfig);
     }
   };
 
@@ -86,6 +96,90 @@ export function GameModeSelector({ onStartGame }: GameModeSelectorProps) {
           </div>
         </div>
       )}
+
+      <div className="timer-options">
+        <div className="option-group">
+          <label>计时模式</label>
+          <div className="option-buttons">
+            <button
+              className={`option-btn ${timerMode === 'none' ? 'active' : ''}`}
+              onClick={() => setTimerMode('none')}
+            >
+              无限时
+            </button>
+            <button
+              className={`option-btn ${timerMode === 'perMove' ? 'active' : ''}`}
+              onClick={() => {
+                setTimerMode('perMove');
+                setTimerSeconds(30);
+              }}
+            >
+              每步限时
+            </button>
+            <button
+              className={`option-btn ${timerMode === 'total' ? 'active' : ''}`}
+              onClick={() => {
+                setTimerMode('total');
+                setTimerSeconds(300);
+              }}
+            >
+              总时间
+            </button>
+          </div>
+        </div>
+
+        {timerMode === 'perMove' && (
+          <div className="option-group">
+            <label>每步时间</label>
+            <div className="option-buttons">
+              <button
+                className={`option-btn ${timerSeconds === 15 ? 'active' : ''}`}
+                onClick={() => setTimerSeconds(15)}
+              >
+                15秒
+              </button>
+              <button
+                className={`option-btn ${timerSeconds === 30 ? 'active' : ''}`}
+                onClick={() => setTimerSeconds(30)}
+              >
+                30秒
+              </button>
+              <button
+                className={`option-btn ${timerSeconds === 60 ? 'active' : ''}`}
+                onClick={() => setTimerSeconds(60)}
+              >
+                60秒
+              </button>
+            </div>
+          </div>
+        )}
+
+        {timerMode === 'total' && (
+          <div className="option-group">
+            <label>总时间</label>
+            <div className="option-buttons">
+              <button
+                className={`option-btn ${timerSeconds === 300 ? 'active' : ''}`}
+                onClick={() => setTimerSeconds(300)}
+              >
+                5分钟
+              </button>
+              <button
+                className={`option-btn ${timerSeconds === 600 ? 'active' : ''}`}
+                onClick={() => setTimerSeconds(600)}
+              >
+                10分钟
+              </button>
+              <button
+                className={`option-btn ${timerSeconds === 900 ? 'active' : ''}`}
+                onClick={() => setTimerSeconds(900)}
+              >
+                15分钟
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <button className="start-btn" onClick={handleStart}>
         开始游戏
