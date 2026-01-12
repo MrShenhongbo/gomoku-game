@@ -11,6 +11,62 @@
   opacity: 0.8;
 }
 
+.board-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board-main {
+  display: flex;
+  align-items: center;
+}
+
+/* 坐标样式 */
+.coord-row {
+  display: flex;
+  align-items: center;
+}
+
+.coord-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.coord-label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+  user-select: none;
+}
+
+.col-label {
+  width: 28px;
+  text-align: center;
+  height: 16px;
+  line-height: 16px;
+}
+
+.row-label {
+  width: 16px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+}
+
+.coord-corner {
+  width: 16px;
+  height: 16px;
+}
+
+.coord-top {
+  margin-bottom: 2px;
+}
+
+.coord-bottom {
+  margin-top: 2px;
+}
+
 .board {
   background: linear-gradient(135deg, #deb887 0%, #d2a679 100%);
   padding: 10px;
