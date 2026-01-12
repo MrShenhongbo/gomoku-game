@@ -1,0 +1,103 @@
+.mode-selector {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mode-selector h3 {
+  margin: 0 0 12px 0;
+  text-align: center;
+  color: #333;
+  font-size: 1rem;
+}
+
+.mode-options {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  border-color: #2196f3;
+}
+
+.mode-btn.active {
+  background: #2196f3;
+  color: white;
+  border-color: #2196f3;
+}
+
+.ai-options {
+  border-top: 1px solid #ddd;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.option-group {
+  margin-bottom: 12px;
+}
+
+.option-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.option-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.option-btn {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+  border-color: #2196f3;
+}
+
+.option-btn.active {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
+}
+
+.start-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  background: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-weight: 500;
+}
+
+.start-btn:hover {
+  background: #45a049;
+}

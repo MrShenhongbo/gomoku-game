@@ -1,0 +1,58 @@
+.control-panel {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.control-panel button {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.control-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-new-game {
+  background: #4caf50;
+  color: white;
+}
+
+.btn-new-game:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.btn-undo {
+  background: #ff9800;
+  color: white;
+}
+
+.btn-undo:hover:not(:disabled) {
+  background: #f57c00;
+}
+
+.btn-surrender {
+  background: #f44336;
+  color: white;
+}
+
+.btn-surrender:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+.btn-hint {
+  background: #2196f3;
+  color: white;
+}
+
+.btn-hint:hover:not(:disabled) {
+  background: #1976d2;
+}

@@ -1,0 +1,146 @@
+.board-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.board-container.disabled {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.board {
+  background: linear-gradient(135deg, #deb887 0%, #d2a679 100%);
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.board-row {
+  display: flex;
+}
+
+.cell {
+  width: 28px;
+  height: 28px;
+  position: relative;
+  cursor: pointer;
+}
+
+.cell:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.cell-cross {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+}
+
+.cell-cross::before,
+.cell-cross::after {
+  content: '';
+  position: absolute;
+  background: #8b7355;
+}
+
+.cell-cross::before {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.cell-cross::after {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+/* 边缘处理 */
+.board-row:first-child .cell .cell-cross::after {
+  top: 50%;
+}
+
+.board-row:last-child .cell .cell-cross::after {
+  bottom: 50%;
+}
+
+.board-row .cell:first-child .cell-cross::before {
+  left: 50%;
+}
+
+.board-row .cell:last-child .cell-cross::before {
+  right: 50%;
+}
+
+.stone {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  z-index: 1;
+  transition: transform 0.1s ease;
+}
+
+.stone.black {
+  background: radial-gradient(circle at 30% 30%, #4a4a4a, #1a1a1a);
+  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.stone.white {
+  background: radial-gradient(circle at 30% 30%, #ffffff, #e0e0e0);
+  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.3);
+}
+
+.stone.last-move::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff4444;
+}
+
+.stone.winning {
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.hint-marker {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #4a90d9;
+  z-index: 1;
+  animation: hint-blink 0.8s ease-in-out infinite;
+}
+
+@keyframes hint-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
