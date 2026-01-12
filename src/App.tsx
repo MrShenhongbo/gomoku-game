@@ -3,8 +3,11 @@ import { Board } from './components/Board/Board';
 import { GameInfo } from './components/GameInfo/GameInfo';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
 import { GameModeSelector } from './components/GameModeSelector/GameModeSelector';
+import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 import { useGame } from './hooks/useGame';
 import './App.css';
+
+type ConfirmAction = 'newGame' | 'surrender' | null;
 
 function App() {
   const {
@@ -22,6 +25,7 @@ function App() {
   } = useGame();
 
   const [showModeSelector, setShowModeSelector] = useState(true);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
 
   const handleStartGame = (
     mode: 'PvP' | 'PvAI',
@@ -32,8 +36,30 @@ function App() {
     setShowModeSelector(false);
   };
 
-  const handleNewGame = () => {
-    setShowModeSelector(true);
+  const handleNewGameClick = () => {
+    // 如果游戏进行中且有落子，显示确认对话框
+    if (gameState && gameState.move_count > 0 && gameState.status === 'Playing') {
+      setConfirmAction('newGame');
+    } else {
+      setShowModeSelector(true);
+    }
+  };
+
+  const handleSurrenderClick = () => {
+    setConfirmAction('surrender');
+  };
+
+  const handleConfirm = () => {
+    if (confirmAction === 'newGame') {
+      setShowModeSelector(true);
+    } else if (confirmAction === 'surrender') {
+      handleSurrender();
+    }
+    setConfirmAction(null);
+  };
+
+  const handleCancel = () => {
+    setConfirmAction(null);
   };
 
   if (!gameState) {
@@ -69,12 +95,34 @@ function App() {
             gameState={gameState}
             isLoading={isLoading}
             isGettingHint={isGettingHint}
-            onNewGame={handleNewGame}
+            onNewGame={handleNewGameClick}
             onUndo={handleUndo}
             onGetHint={handleGetHint}
-            onSurrender={handleSurrender}
+            onSurrender={handleSurrenderClick}
           />
         </>
+      )}
+
+      {confirmAction === 'newGame' && (
+        <ConfirmDialog
+          title="开始新游戏"
+          message="当前对局尚未结束，确定要开始新游戏吗？"
+          confirmText="确定"
+          cancelText="取消"
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
+      )}
+
+      {confirmAction === 'surrender' && (
+        <ConfirmDialog
+          title="确认认输"
+          message="确定要认输吗？对手将获得胜利。"
+          confirmText="认输"
+          cancelText="取消"
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
       )}
     </div>
   );
