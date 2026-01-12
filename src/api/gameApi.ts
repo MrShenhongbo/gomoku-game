@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   AIDifficulty,
   AIMoveResult,
+  ExportData,
   GameMode,
   GameSnapshot,
   HintResult,
@@ -51,4 +52,8 @@ export async function surrender(): Promise<GameSnapshot> {
 
 export async function getMoveHistory(): Promise<MoveHistoryResult> {
   return invoke<MoveHistoryResult>('get_move_history');
+}
+
+export async function exportGame(): Promise<ExportData> {
+  return invoke<ExportData>('export_game');
 }

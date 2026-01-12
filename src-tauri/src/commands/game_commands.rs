@@ -177,3 +177,28 @@ pub fn get_move_history(state: State<GameState>) -> MoveHistoryResult {
         moves: game.move_history.clone(),
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExportData {
+    pub moves: Vec<Move>,
+    pub game_mode: GameMode,
+    pub rule_set: RuleSet,
+    pub result: String,
+}
+
+#[tauri::command]
+pub fn export_game(state: State<GameState>) -> ExportData {
+    let game = state.inner.lock().unwrap();
+    let result = match game.status {
+        crate::game::GameStatus::BlackWin => "黑棋获胜".to_string(),
+        crate::game::GameStatus::WhiteWin => "白棋获胜".to_string(),
+        crate::game::GameStatus::Draw => "平局".to_string(),
+        crate::game::GameStatus::Playing => "进行中".to_string(),
+    };
+    ExportData {
+        moves: game.move_history.clone(),
+        game_mode: game.game_mode,
+        rule_set: game.rule_set,
+        result,
+    }
+}

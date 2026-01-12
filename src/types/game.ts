@@ -41,6 +41,13 @@ export interface MoveHistoryResult {
   moves: Move[];
 }
 
+export interface ExportData {
+  moves: Move[];
+  game_mode: GameMode;
+  rule_set: RuleSet;
+  result: string;
+}
+
 export interface GameSnapshot {
   board: (Stone | null)[][];
   current_player: Stone;
