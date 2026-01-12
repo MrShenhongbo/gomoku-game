@@ -1,5 +1,5 @@
 use super::board::{Board, BOARD_SIZE};
-use super::types::{GameStatus, Position, Stone};
+use super::types::{GameStatus, Position, RuleSet, Stone};
 use serde::{Deserialize, Serialize};
 
 const DIRECTIONS: [(i32, i32); 4] = [
@@ -13,6 +13,14 @@ const DIRECTIONS: [(i32, i32); 4] = [
 pub struct GameResult {
     pub status: GameStatus,
     pub winning_positions: Option<Vec<Position>>,
+}
+
+/// 禁手类型
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FoulType {
+    Overline,    // 长连禁手（超过5子）
+    DoubleFour,  // 四四禁手
+    DoubleThree, // 三三禁手
 }
 
 pub fn check_win(board: &Board, last_move: Position) -> Option<GameResult> {
@@ -128,6 +136,147 @@ fn count_consecutive(board: &Board, pos: Position, stone: Stone, dr: i32, dc: i3
     }
 
     count
+}
+
+/// 检查是否为禁手（仅对黑棋生效）
+/// 返回 Some(FoulType) 表示禁手，None 表示合法
+pub fn check_foul(board: &Board, pos: Position, rule_set: RuleSet) -> Option<FoulType> {
+    // 标准规则无禁手
+    if rule_set == RuleSet::Standard {
+        return None;
+    }
+
+    // 只有黑棋有禁手
+    if board.get(pos) != Some(Stone::Black) {
+        return None;
+    }
+
+    // 检查长连禁手（超过5子）
+    if check_overline(board, pos) {
+        return Some(FoulType::Overline);
+    }
+
+    // 检查四四禁手
+    if check_double_four(board, pos) {
+        return Some(FoulType::DoubleFour);
+    }
+
+    // 检查三三禁手
+    if check_double_three(board, pos) {
+        return Some(FoulType::DoubleThree);
+    }
+
+    None
+}
+
+/// 检查长连禁手（任意方向超过5子连续）
+fn check_overline(board: &Board, pos: Position) -> bool {
+    let stone = Stone::Black;
+    for &(dr, dc) in &DIRECTIONS {
+        if count_consecutive(board, pos, stone, dr, dc) > 5 {
+            return true;
+        }
+    }
+    false
+}
+
+/// 检查四四禁手（两个或以上的四）
+fn check_double_four(board: &Board, pos: Position) -> bool {
+    let mut four_count = 0;
+    let stone = Stone::Black;
+
+    for &(dr, dc) in &DIRECTIONS {
+        if is_four(board, pos, stone, dr, dc) {
+            four_count += 1;
+        }
+    }
+
+    four_count >= 2
+}
+
+/// 检查是否形成四（4子连续，有一端可以成五）
+fn is_four(board: &Board, pos: Position, stone: Stone, dr: i32, dc: i32) -> bool {
+    let count = count_consecutive(board, pos, stone, dr, dc);
+    if count != 4 {
+        return false;
+    }
+
+    // 检查两端是否有空位可以成五
+    let (end1_empty, end2_empty) = check_line_ends(board, pos, stone, dr, dc);
+    end1_empty || end2_empty
+}
+
+/// 检查三三禁手（两个或以上的活三）
+fn check_double_three(board: &Board, pos: Position) -> bool {
+    let mut live_three_count = 0;
+    let stone = Stone::Black;
+
+    for &(dr, dc) in &DIRECTIONS {
+        if is_live_three(board, pos, stone, dr, dc) {
+            live_three_count += 1;
+        }
+    }
+
+    live_three_count >= 2
+}
+
+/// 检查是否形成活三（3子连续，两端都有空位）
+fn is_live_three(board: &Board, pos: Position, stone: Stone, dr: i32, dc: i32) -> bool {
+    let count = count_consecutive(board, pos, stone, dr, dc);
+    if count != 3 {
+        return false;
+    }
+
+    // 检查两端是否都有空位
+    let (end1_empty, end2_empty) = check_line_ends(board, pos, stone, dr, dc);
+    end1_empty && end2_empty
+}
+
+/// 检查连续棋子的两端是否为空
+fn check_line_ends(board: &Board, pos: Position, stone: Stone, dr: i32, dc: i32) -> (bool, bool) {
+    // 找到连续棋子的两端
+    let mut r = pos.row as i32;
+    let mut c = pos.col as i32;
+
+    // 正向找到末端
+    while r + dr >= 0
+        && r + dr < BOARD_SIZE as i32
+        && c + dc >= 0
+        && c + dc < BOARD_SIZE as i32
+        && board.get(Position::new((r + dr) as usize, (c + dc) as usize)) == Some(stone)
+    {
+        r += dr;
+        c += dc;
+    }
+    let end1_r = r + dr;
+    let end1_c = c + dc;
+    let end1_empty = end1_r >= 0
+        && end1_r < BOARD_SIZE as i32
+        && end1_c >= 0
+        && end1_c < BOARD_SIZE as i32
+        && board.get(Position::new(end1_r as usize, end1_c as usize)).is_none();
+
+    // 反向找到末端
+    r = pos.row as i32;
+    c = pos.col as i32;
+    while r - dr >= 0
+        && r - dr < BOARD_SIZE as i32
+        && c - dc >= 0
+        && c - dc < BOARD_SIZE as i32
+        && board.get(Position::new((r - dr) as usize, (c - dc) as usize)) == Some(stone)
+    {
+        r -= dr;
+        c -= dc;
+    }
+    let end2_r = r - dr;
+    let end2_c = c - dc;
+    let end2_empty = end2_r >= 0
+        && end2_r < BOARD_SIZE as i32
+        && end2_c >= 0
+        && end2_c < BOARD_SIZE as i32
+        && board.get(Position::new(end2_r as usize, end2_c as usize)).is_none();
+
+    (end1_empty, end2_empty)
 }
 
 #[cfg(test)]

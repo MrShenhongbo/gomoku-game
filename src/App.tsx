@@ -107,15 +107,16 @@ function App() {
     difficulty?: 'Easy' | 'Medium' | 'Hard',
     playerStone?: 'Black' | 'White',
     timer?: TimerConfig,
-    aivai?: AIvAIConfig
+    aivai?: AIvAIConfig,
+    ruleSet?: 'Standard' | 'Renju'
   ) => {
     if (mode === 'AIvAI' && aivai) {
       // AIvAI 模式使用黑棋难度作为默认难度
-      startNewGame(mode, aivai.blackDifficulty, 'Black');
+      startNewGame(mode, aivai.blackDifficulty, 'Black', ruleSet);
       setAivaiConfig(aivai);
       setAivaiPaused(false);
     } else {
-      startNewGame(mode, difficulty, playerStone);
+      startNewGame(mode, difficulty, playerStone, ruleSet);
       setAivaiConfig(null);
     }
     setShowModeSelector(false);

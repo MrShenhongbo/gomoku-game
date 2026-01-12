@@ -5,6 +5,7 @@ import type {
   GameMode,
   GameSnapshot,
   Position,
+  RuleSet,
   Stone,
 } from '../types/game';
 
@@ -56,13 +57,13 @@ export function useGame() {
   }, [fetchGameState]);
 
   const startNewGame = useCallback(
-    async (mode: GameMode, difficulty?: AIDifficulty, playerStone?: Stone) => {
+    async (mode: GameMode, difficulty?: AIDifficulty, playerStone?: Stone, ruleSet?: RuleSet) => {
       setIsLoading(true);
       setError(null);
       aiMoveInProgress.current = false;
 
       try {
-        const state = await api.newGame(mode, difficulty, playerStone);
+        const state = await api.newGame(mode, difficulty, playerStone, ruleSet);
         setGameState(state);
 
         // 如果是人机模式且 AI 先手，触发 AI 落子

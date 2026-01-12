@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 use crate::ai::find_best_move;
-use crate::game::{AIDifficulty, GameMode, GameSnapshot, GameState, MoveResult, Position, Stone};
+use crate::game::{AIDifficulty, GameMode, GameSnapshot, GameState, MoveResult, Position, RuleSet, Stone};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AIMoveResult {
@@ -22,9 +22,10 @@ pub fn new_game(
     mode: GameMode,
     difficulty: Option<AIDifficulty>,
     player_stone: Option<Stone>,
+    rule_set: Option<RuleSet>,
 ) -> GameSnapshot {
     let mut game = state.inner.lock().unwrap();
-    game.set_mode(mode, difficulty, player_stone);
+    game.set_mode(mode, difficulty, player_stone, rule_set);
     GameSnapshot::from(&*game)
 }
 

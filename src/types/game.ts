@@ -6,6 +6,8 @@ export type AIDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 export type GameStatus = 'Playing' | 'BlackWin' | 'WhiteWin' | 'Draw';
 
+export type RuleSet = 'Standard' | 'Renju';
+
 export interface Position {
   row: number;
   col: number;
@@ -39,6 +41,7 @@ export interface GameSnapshot {
   move_count: number;
   winning_positions: Position[] | null;
   last_move: Position | null;
+  rule_set: RuleSet;
 }
 
 export const BOARD_SIZE = 15;

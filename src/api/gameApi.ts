@@ -6,18 +6,21 @@ import type {
   GameSnapshot,
   HintResult,
   MoveResult,
+  RuleSet,
   Stone,
 } from '../types/game';
 
 export async function newGame(
   mode: GameMode,
   difficulty?: AIDifficulty,
-  playerStone?: Stone
+  playerStone?: Stone,
+  ruleSet?: RuleSet
 ): Promise<GameSnapshot> {
   return invoke<GameSnapshot>('new_game', {
     mode,
     difficulty,
     playerStone,
+    ruleSet,
   });
 }
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { AIDifficulty, GameMode, Stone } from '../../types/game';
+import type { AIDifficulty, GameMode, RuleSet, Stone } from '../../types/game';
 import type { TimerMode } from '../Timer/Timer';
 import './GameModeSelector.css';
 
@@ -20,7 +20,8 @@ interface GameModeSelectorProps {
     difficulty?: AIDifficulty,
     playerStone?: Stone,
     timerConfig?: TimerConfig,
-    aivaiConfig?: AIvAIConfig
+    aivaiConfig?: AIvAIConfig,
+    ruleSet?: RuleSet
   ) => void;
 }
 
@@ -30,6 +31,7 @@ export function GameModeSelector({ onStartGame }: GameModeSelectorProps) {
   const [playerStone, setPlayerStone] = useState<Stone>('Black');
   const [timerMode, setTimerMode] = useState<TimerMode>('none');
   const [timerSeconds, setTimerSeconds] = useState(30);
+  const [ruleSet, setRuleSet] = useState<RuleSet>('Standard');
   // AIvAI 配置
   const [blackDifficulty, setBlackDifficulty] = useState<AIDifficulty>('Medium');
   const [whiteDifficulty, setWhiteDifficulty] = useState<AIDifficulty>('Medium');
@@ -38,16 +40,16 @@ export function GameModeSelector({ onStartGame }: GameModeSelectorProps) {
   const handleStart = () => {
     const timerConfig: TimerConfig = { mode: timerMode, seconds: timerSeconds };
     if (mode === 'PvAI') {
-      onStartGame(mode, difficulty, playerStone, timerConfig);
+      onStartGame(mode, difficulty, playerStone, timerConfig, undefined, ruleSet);
     } else if (mode === 'AIvAI') {
       const aivaiConfig: AIvAIConfig = {
         blackDifficulty,
         whiteDifficulty,
         speed: aiSpeed,
       };
-      onStartGame(mode, undefined, undefined, timerConfig, aivaiConfig);
+      onStartGame(mode, undefined, undefined, timerConfig, aivaiConfig, ruleSet);
     } else {
-      onStartGame(mode, undefined, undefined, timerConfig);
+      onStartGame(mode, undefined, undefined, timerConfig, undefined, ruleSet);
     }
   };
 
@@ -282,6 +284,31 @@ export function GameModeSelector({ onStartGame }: GameModeSelectorProps) {
           )}
         </div>
       )}
+
+      <div className="rule-options">
+        <div className="option-group">
+          <label>规则设置</label>
+          <div className="option-buttons">
+            <button
+              className={`option-btn ${ruleSet === 'Standard' ? 'active' : ''}`}
+              onClick={() => setRuleSet('Standard')}
+            >
+              标准规则
+            </button>
+            <button
+              className={`option-btn ${ruleSet === 'Renju' ? 'active' : ''}`}
+              onClick={() => setRuleSet('Renju')}
+            >
+              禁手规则
+            </button>
+          </div>
+          {ruleSet === 'Renju' && (
+            <div className="rule-hint">
+              黑棋禁止：三三、四四、长连
+            </div>
+          )}
+        </div>
+      </div>
 
       <button className="start-btn" onClick={handleStart}>
         开始游戏

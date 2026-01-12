@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use super::board::Board;
 use super::rules;
-use super::types::{AIDifficulty, GameMode, GameStatus, Move, Position, Stone};
+use super::types::{AIDifficulty, GameMode, GameStatus, Move, Position, RuleSet, Stone};
 
 pub struct GameState {
     pub inner: Mutex<GameStateInner>,
@@ -34,6 +34,7 @@ pub struct GameStateInner {
     pub move_history: Vec<Move>,
     pub winning_positions: Option<Vec<Position>>,
     pub last_move: Option<Position>,
+    pub rule_set: RuleSet,
 }
 
 impl GameStateInner {
@@ -48,6 +49,7 @@ impl GameStateInner {
             move_history: Vec::new(),
             winning_positions: None,
             last_move: None,
+            rule_set: RuleSet::Standard,
         }
     }
 
@@ -60,13 +62,22 @@ impl GameStateInner {
         self.last_move = None;
     }
 
-    pub fn set_mode(&mut self, mode: GameMode, difficulty: Option<AIDifficulty>, player_stone: Option<Stone>) {
+    pub fn set_mode(
+        &mut self,
+        mode: GameMode,
+        difficulty: Option<AIDifficulty>,
+        player_stone: Option<Stone>,
+        rule_set: Option<RuleSet>,
+    ) {
         self.game_mode = mode;
         if let Some(diff) = difficulty {
             self.ai_difficulty = diff;
         }
         if let Some(stone) = player_stone {
             self.player_stone = stone;
+        }
+        if let Some(rules) = rule_set {
+            self.rule_set = rules;
         }
         self.reset();
     }
@@ -77,6 +88,21 @@ impl GameStateInner {
         }
 
         self.board.place_stone(pos, self.current_player)?;
+
+        // 检查禁手（仅对黑棋生效）
+        if self.current_player == Stone::Black {
+            if let Some(foul) = rules::check_foul(&self.board, pos, self.rule_set) {
+                // 禁手，撤销落子，黑棋判负
+                self.board.undo_move(pos);
+                self.status = GameStatus::WhiteWin;
+                let foul_msg = match foul {
+                    rules::FoulType::Overline => "长连禁手",
+                    rules::FoulType::DoubleFour => "四四禁手",
+                    rules::FoulType::DoubleThree => "三三禁手",
+                };
+                return Err(format!("黑棋{}，白棋获胜", foul_msg));
+            }
+        }
 
         let move_record = Move {
             position: pos,
@@ -176,6 +202,7 @@ pub struct GameSnapshot {
     pub move_count: usize,
     pub winning_positions: Option<Vec<Position>>,
     pub last_move: Option<Position>,
+    pub rule_set: RuleSet,
 }
 
 impl From<&GameStateInner> for GameSnapshot {
@@ -190,6 +217,7 @@ impl From<&GameStateInner> for GameSnapshot {
             move_count: state.move_history.len(),
             winning_positions: state.winning_positions.clone(),
             last_move: state.last_move,
+            rule_set: state.rule_set,
         }
     }
 }

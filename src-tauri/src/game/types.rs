@@ -77,3 +77,11 @@ pub struct Move {
     pub stone: Stone,
     pub move_number: u32,
 }
+
+/// 规则集
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum RuleSet {
+    #[default]
+    Standard,  // 标准规则，无禁手
+    Renju,     // 连珠规则，黑棋有禁手
+}
