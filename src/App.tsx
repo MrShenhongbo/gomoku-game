@@ -1,11 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Board } from './components/Board/Board';
 import { GameInfo } from './components/GameInfo/GameInfo';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
 import { GameModeSelector } from './components/GameModeSelector/GameModeSelector';
 import { ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
+import { Settings } from './components/Settings/Settings';
 import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useSound } from './hooks/useSound';
 import './App.css';
 
 type ConfirmAction = 'newGame' | 'surrender' | null;
@@ -25,8 +27,42 @@ function App() {
     handleSurrender,
   } = useGame();
 
+  const { soundEnabled, toggleSound, playPlaceSound, playWinSound, playLoseSound } = useSound();
+
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const prevMoveCountRef = useRef(0);
+  const prevStatusRef = useRef<string | null>(null);
+
+  // 监听落子播放音效
+  useEffect(() => {
+    if (!gameState) return;
+
+    // 落子音效
+    if (gameState.move_count > prevMoveCountRef.current) {
+      playPlaceSound();
+    }
+    prevMoveCountRef.current = gameState.move_count;
+
+    // 游戏结束音效
+    if (prevStatusRef.current === 'Playing' && gameState.status !== 'Playing') {
+      if (gameState.status === 'Draw') {
+        // 平局不播放音效
+      } else if (
+        gameState.game_mode === 'PvAI' &&
+        ((gameState.player_stone === 'Black' && gameState.status === 'BlackWin') ||
+          (gameState.player_stone === 'White' && gameState.status === 'WhiteWin'))
+      ) {
+        playWinSound();
+      } else if (gameState.game_mode === 'PvAI') {
+        playLoseSound();
+      } else {
+        // PvP 模式播放获胜音效
+        playWinSound();
+      }
+    }
+    prevStatusRef.current = gameState.status;
+  }, [gameState, playPlaceSound, playWinSound, playLoseSound]);
 
   const handleStartGame = (
     mode: 'PvP' | 'PvAI',
@@ -35,6 +71,8 @@ function App() {
   ) => {
     startNewGame(mode, difficulty, playerStone);
     setShowModeSelector(false);
+    prevMoveCountRef.current = 0;
+    prevStatusRef.current = 'Playing';
   };
 
   const handleNewGameClick = useCallback(() => {
@@ -79,6 +117,7 @@ function App() {
   return (
     <div className="app">
       <h1 className="title">五子棋</h1>
+      <Settings soundEnabled={soundEnabled} onToggleSound={toggleSound} />
 
       {error && <div className="error">{error}</div>}
 
