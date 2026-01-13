@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS Apple Silicon (M1+)
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+            rust_target: aarch64-apple-darwin
+          # macOS Intel
+          - platform: macos-13
+            args: --target x86_64-apple-darwin
+            rust_target: x86_64-apple-darwin
+          # Linux
+          - platform: ubuntu-22.04
+            args: ""
+            rust_target: ""
+          # Windows
+          - platform: windows-latest
+            args: ""
+            rust_target: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install dependencies (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and upload to release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "五子棋 ${{ github.ref_name }}"
+          releaseBody: |
+            ## 下载安装包
+
+            请根据您的操作系统选择对应的安装包：
+
+            | 操作系统 | 文件 |
+            |---------|------|
+            | Windows | `.msi` 或 `.exe` |
+            | macOS Intel | `x64.dmg` |
+            | macOS Apple Silicon | `aarch64.dmg` |
+            | Linux (Debian/Ubuntu) | `.deb` |
+            | Linux (通用) | `.AppImage` |
+
+            ## 安装说明
+
+            - **Windows**: 下载 `.msi` 文件双击安装
+            - **macOS**: 下载对应架构的 `.dmg` 文件，拖拽到应用程序文件夹
+            - **Linux**: 下载 `.deb` 或 `.AppImage` 文件安装
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
