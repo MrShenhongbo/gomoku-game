@@ -1,10 +1,10 @@
 [package]
 name = "gomoku-game"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+version = "1.0.0"
+description = "A modern Gomoku (Five in a Row) desktop game built with Tauri 2 + React + Rust"
+authors = ["MrShenhongbo"]
+license = "MIT"
+repository = "https://github.com/MrShenhongbo/gomoku-game"
 edition = "2021"
 rust-version = "1.77.2"
 
