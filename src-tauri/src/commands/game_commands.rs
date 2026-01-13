@@ -180,6 +180,8 @@ pub fn get_move_history(state: State<GameState>) -> MoveHistoryResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExportData {
+    pub version: String,
+    pub exported_at: String,
     pub moves: Vec<Move>,
     pub game_mode: GameMode,
     pub rule_set: RuleSet,
@@ -196,6 +198,8 @@ pub fn export_game(state: State<GameState>) -> ExportData {
         crate::game::GameStatus::Playing => "进行中".to_string(),
     };
     ExportData {
+        version: "1.0".to_string(),
+        exported_at: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
         moves: game.move_history.clone(),
         game_mode: game.game_mode,
         rule_set: game.rule_set,

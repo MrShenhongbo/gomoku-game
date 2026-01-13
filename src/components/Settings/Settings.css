@@ -66,3 +66,15 @@
 .theme-menu button:hover {
   background: #f5f5f5;
 }
+
+.export-btn:disabled,
+.import-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-btn:disabled:hover,
+.import-btn:disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

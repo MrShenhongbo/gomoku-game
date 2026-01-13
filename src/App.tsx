@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { save, open } from '@tauri-apps/plugin-dialog';
+import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { Board } from './components/Board/Board';
 import { GameInfo } from './components/GameInfo/GameInfo';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
@@ -14,7 +16,7 @@ import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSound } from './hooks/useSound';
 import * as api from './api/gameApi';
-import type { AnalysisResult, GameRecord, Move, Position, Stone } from './types/game';
+import type { AnalysisResult, ExportData, GameRecord, Move, Position, Stone } from './types/game';
 import { saveGameRecord, calculateQualityScore, formatDate } from './utils/gameHistory';
 import './App.css';
 
@@ -331,6 +333,49 @@ function App() {
     setShowHistory(false);
   }, []);
 
+  // 导出棋谱
+  const handleExport = useCallback(async () => {
+    try {
+      const data = await api.exportGame();
+      const filePath = await save({
+        filters: [{ name: '棋谱文件', extensions: ['json'] }],
+        defaultPath: `gomoku_${new Date().toISOString().slice(0, 10)}.json`,
+      });
+      if (filePath) {
+        await writeTextFile(filePath, JSON.stringify(data, null, 2));
+      }
+    } catch (e) {
+      console.error('Failed to export game:', e);
+    }
+  }, []);
+
+  // 导入棋谱
+  const handleImport = useCallback(async () => {
+    try {
+      const filePath = await open({
+        filters: [{ name: '棋谱文件', extensions: ['json'] }],
+        multiple: false,
+      });
+      if (filePath) {
+        const content = await readTextFile(filePath as string);
+        const data: ExportData = JSON.parse(content);
+        // 验证数据格式
+        if (!data.moves || !Array.isArray(data.moves)) {
+          alert('无效的棋谱文件');
+          return;
+        }
+        // 进入复盘模式
+        setReplayMoves(data.moves);
+        setReplayStep(data.moves.length);
+        setShowReplay(true);
+        setShowModeSelector(false);
+        setShowHistory(false);
+      }
+    } catch (e) {
+      console.error('Failed to import game:', e);
+    }
+  }, []);
+
   const getReplayBoard = useCallback((step: number): (Stone | null)[][] => {
     const board: (Stone | null)[][] = Array(15).fill(null).map(() => Array(15).fill(null));
     for (let i = 0; i < step && i < replayMoves.length; i++) {
@@ -368,6 +413,9 @@ function App() {
         onToggleSound={toggleSound}
         showHistoryBtn={showModeSelector && !showHistory && !showPuzzleMode}
         onShowHistory={handleShowHistory}
+        onExport={!showModeSelector && !showReplay && !showPuzzleMode && !showHistory ? handleExport : undefined}
+        onImport={!showReplay && !showPuzzleMode && !showHistory && (showModeSelector || gameState.status !== 'Playing') ? handleImport : undefined}
+        canExport={gameState.move_count > 0}
       />
 
       {error && <div className="error">{error}</div>}

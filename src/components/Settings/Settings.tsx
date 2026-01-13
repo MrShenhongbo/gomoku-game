@@ -7,6 +7,9 @@ interface SettingsProps {
   onToggleSound: () => void;
   showHistoryBtn?: boolean;
   onShowHistory?: () => void;
+  onExport?: () => void;
+  onImport?: () => void;
+  canExport?: boolean;
 }
 
 const THEME_LABELS: Record<Theme, string> = {
@@ -15,7 +18,7 @@ const THEME_LABELS: Record<Theme, string> = {
   green: '🌿',
 };
 
-export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHistory }: SettingsProps) {
+export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHistory, onExport, onImport, canExport }: SettingsProps) {
   const { theme, setTheme } = useTheme();
   const [showThemeMenu, setShowThemeMenu] = useState(false);
 
@@ -37,6 +40,25 @@ export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHi
           title="对局记录"
         >
           📋
+        </button>
+      )}
+      {onImport && (
+        <button
+          className="settings-btn import-btn"
+          onClick={onImport}
+          title="导入棋谱"
+        >
+          📥
+        </button>
+      )}
+      {onExport && (
+        <button
+          className="settings-btn export-btn"
+          onClick={onExport}
+          disabled={!canExport}
+          title="导出棋谱"
+        >
+          📤
         </button>
       )}
       <button

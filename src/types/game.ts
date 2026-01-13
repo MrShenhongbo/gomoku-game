@@ -44,6 +44,8 @@ export interface MoveHistoryResult {
 }
 
 export interface ExportData {
+  version: string;
+  exported_at: string;
   moves: Move[];
   game_mode: GameMode;
   rule_set: RuleSet;
