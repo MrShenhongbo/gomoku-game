@@ -51,7 +51,7 @@ export function GameHistory({ onBack, onReplay }: GameHistoryProps) {
     <div className="game-history">
       <div className="history-header">
         <button className="back-btn" onClick={onBack}>
-          ← 返回首页
+          ← 返回
         </button>
         <h3>对局记录</h3>
         {records.length > 0 && (
