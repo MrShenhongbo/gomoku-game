@@ -36,12 +36,14 @@
 }
 
 .clear-btn {
-  padding: 6px 12px;
+  padding: 8px 16px;
   background: #dc3545;
-  border: none;
-  border-radius: 4px;
+  border: 1px solid #c82333;
+  border-radius: 6px;
   color: white;
   cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
 }
 
 .clear-btn:hover {
