@@ -5,6 +5,18 @@ import type { Puzzle, PuzzleListItem, Stone, Position } from '../../types/game';
 import { BOARD_SIZE } from '../../types/game';
 import './PuzzleMode.css';
 
+// 难度标签映射
+const getDifficultyLabel = (difficulty: string): string => {
+  const labels: Record<string, string> = {
+    'Easy': '简单',
+    'Medium': '中等',
+    'Hard': '困难',
+    'Expert': '专家',
+    'Master': '大师'
+  };
+  return labels[difficulty] || difficulty;
+};
+
 interface PuzzleModeProps {
   onBack: () => void;
 }
@@ -138,7 +150,7 @@ export function PuzzleMode({ onBack }: PuzzleModeProps) {
                 <span className="puzzle-item-desc">{puzzle.description}</span>
               </div>
               <span className={`puzzle-difficulty ${puzzle.difficulty}`}>
-                {puzzle.difficulty === 'Easy' ? '简单' : puzzle.difficulty === 'Medium' ? '中等' : '困难'}
+                {getDifficultyLabel(puzzle.difficulty)}
               </span>
             </div>
           ))}
@@ -161,7 +173,7 @@ export function PuzzleMode({ onBack }: PuzzleModeProps) {
         <div className="puzzle-info-header">
           <span className="puzzle-info-name">{currentPuzzle.description}</span>
           <span className={`puzzle-difficulty ${currentPuzzle.difficulty}`}>
-            {currentPuzzle.difficulty === 'Easy' ? '简单' : currentPuzzle.difficulty === 'Medium' ? '中等' : '困难'}
+            {getDifficultyLabel(currentPuzzle.difficulty)}
           </span>
         </div>
         <span className="puzzle-player">

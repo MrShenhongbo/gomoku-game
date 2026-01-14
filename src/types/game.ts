@@ -8,7 +8,7 @@ export type GameStatus = 'Playing' | 'BlackWin' | 'WhiteWin' | 'Draw';
 
 export type RuleSet = 'Standard' | 'Renju';
 
-export type PuzzleDifficulty = 'Easy' | 'Medium' | 'Hard';
+export type PuzzleDifficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert' | 'Master';
 
 export interface Position {
   row: number;

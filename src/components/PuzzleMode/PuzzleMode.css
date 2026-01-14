@@ -113,6 +113,26 @@
   color: #ef9a9a;
 }
 
+.puzzle-difficulty.Expert {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.puzzle-difficulty.Master {
+  background: #e0f2f1;
+  color: #00695c;
+}
+
+[data-theme="dark"] .puzzle-difficulty.Expert {
+  background: #4a148c;
+  color: #ce93d8;
+}
+
+[data-theme="dark"] .puzzle-difficulty.Master {
+  background: #004d40;
+  color: #80cbc4;
+}
+
 .puzzle-game {
   flex: 1;
   display: flex;
