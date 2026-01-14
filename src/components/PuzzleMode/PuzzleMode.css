@@ -11,7 +11,7 @@
   align-items: center;
   padding: 8px 12px;
   margin-top: 18px;
-  background: var(--overlay-bg);
+  background: var(--puzzle-header-bg);
   border-radius: 8px;
 }
 
