@@ -7,24 +7,37 @@
 /* 主题变量 */
 :root,
 [data-theme="classic"] {
-  --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --board-bg: #dcb35c;
-  --board-line: #8b6914;
-  --text-primary: white;
+  --bg-gradient: linear-gradient(135deg, #f5f5f0 0%, #e8e4dc 50%, #d4cfc4 100%);
+  --board-bg: linear-gradient(135deg, #c9a66b 0%, #b8956a 100%);
+  --board-line: #3d3d3d;
+  --text-primary: #2c2c2c;
+  --card-bg: rgba(250, 248, 242, 0.95);
+  --coord-color: #6d5a44;
+  --last-move-marker: #c45c48;
+  --hint-marker: #4a6b8a;
+  --text-secondary: #666;
+  --border-color: #ddd;
+  --input-bg: #f5f5f5;
+  --input-bg-active: #e3f2fd;
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="dark"] {
-  --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  --board-bg: #2d3436;
-  --board-line: #636e72;
-  --text-primary: #dfe6e9;
-}
-
-[data-theme="green"] {
-  --bg-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  --board-bg: #a8d5ba;
-  --board-line: #2d5a3d;
-  --text-primary: white;
+  --bg-gradient: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1f1f1f 100%);
+  --board-bg: linear-gradient(135deg, #3a3a3a 0%, #2a2a2a 100%);
+  --board-line: #5a5a5a;
+  --text-primary: #e8e4dc;
+  --card-bg: rgba(45, 45, 45, 0.95);
+  --coord-color: #8a8a8a;
+  --last-move-marker: #c45c48;
+  --hint-marker: #6a9fb5;
+  --text-secondary: #a0a0a0;
+  --border-color: #4a4a4a;
+  --input-bg: #3a3a3a;
+  --input-bg-active: #4a5568;
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
 html, body, #root {
@@ -63,7 +76,7 @@ body {
 
 .title {
   text-align: center;
-  color: white;
+  color: var(--text-primary);
   font-size: 1.3rem;
   margin-bottom: 8px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
@@ -75,7 +88,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 100%;
-  color: white;
+  color: var(--text-primary);
   font-size: 1.5rem;
 }
 
@@ -133,10 +146,10 @@ body {
 
 .replay-mode-hint {
   text-align: center;
-  color: white;
+  color: var(--text-primary);
   font-size: 1rem;
   padding: 8px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--overlay-bg);
   border-radius: 6px;
   margin-bottom: 8px;
 }

@@ -10,11 +10,12 @@
   font-size: 1.5rem;
   font-weight: bold;
   font-family: 'Courier New', monospace;
-  background: #f5f5f5;
+  background: var(--input-bg);
   padding: 8px 16px;
   border-radius: 8px;
   min-width: 80px;
   text-align: center;
+  color: var(--text-primary);
 }
 
 .timer-total {
@@ -27,14 +28,14 @@
   gap: 8px;
   padding: 6px 12px;
   border-radius: 8px;
-  background: #f5f5f5;
+  background: var(--input-bg);
   opacity: 0.6;
   transition: all 0.3s ease;
 }
 
 .player-time.active {
   opacity: 1;
-  background: #e3f2fd;
+  background: var(--input-bg-active);
   box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
 }
 
@@ -50,7 +51,7 @@
 
 .player-indicator.white {
   background: radial-gradient(circle at 30% 30%, #ffffff, #e0e0e0);
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
 }
 
 .player-time .time-display {
@@ -58,6 +59,7 @@
   font-weight: bold;
   font-family: 'Courier New', monospace;
   min-width: 50px;
+  color: var(--text-primary);
 }
 
 .time-display.low-time {

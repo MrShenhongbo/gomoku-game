@@ -76,7 +76,7 @@ cargo clippy
 ├── App.tsx             # 主组件，管理游戏界面切换
 ├── App.css             # 全局样式 + CSS 主题变量
 ├── contexts/
-│   └── ThemeContext.tsx # 主题上下文（经典/深色/护眼绿）
+│   └── ThemeContext.tsx # 主题上下文（亮色/深色）
 ├── hooks/
 │   ├── useGame.ts      # 游戏状态管理 Hook
 │   ├── useSound.ts     # 音效 Hook（Web Audio API）
@@ -124,7 +124,7 @@ cargo clippy
 
 **音效系统**：使用 Web Audio API 动态生成音效，无需外部音频文件。支持落子、获胜、失败三种音效。
 
-**主题系统**：使用 CSS 变量实现主题切换，通过 `ThemeContext` 管理状态，设置保存到 localStorage。
+**主题系统**：使用 CSS 变量实现主题切换，支持亮色和深色两种主题。亮色主题采用中国风设计（宣纸背景 + 檀木棋盘），深色主题采用水墨画风格（深墨背景 + 墨石棋盘）。通过 `ThemeContext` 管理状态，设置保存到 localStorage。CSS 变量包括：`--bg-gradient`、`--board-bg`、`--board-line`、`--text-primary`、`--text-secondary`、`--card-bg`、`--border-color`、`--input-bg`、`--input-bg-active`、`--overlay-bg`、`--shadow-color` 等。
 
 **计时器**：支持两种模式 - 每步限时（perMove）和总时间（total），超时自动判负。
 
@@ -171,6 +171,6 @@ cargo clippy
 
 ### 系统功能
 - 音效（落子/获胜/失败）
-- 主题切换（经典/深色/护眼绿）
+- 主题切换（亮色/深色）
 - 游戏统计（胜负记录）
 - 键盘快捷键（Ctrl+Z 悔棋, Ctrl+N 新游戏, H 提示）

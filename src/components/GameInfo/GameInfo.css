@@ -1,17 +1,17 @@
 .game-info {
   text-align: center;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   border-radius: 8px;
   margin-bottom: 8px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .game-info h2 {
   margin: 0 0 4px 0;
   font-size: 0.95rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .current-player {
@@ -20,6 +20,7 @@
   justify-content: center;
   gap: 6px;
   font-size: 0.9rem;
+  color: var(--text-primary);
 }
 
 .player-indicator {
@@ -35,7 +36,7 @@
 
 .player-indicator.white {
   background: radial-gradient(circle at 30% 30%, #ffffff, #e0e0e0);
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
 }
 
 .game-status {
@@ -64,13 +65,13 @@
 .move-count {
   margin-top: 4px;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-secondary);
 }
 
 .loading-indicator {
   height: 18px;
   margin-top: 4px;
-  color: #2196f3;
+  color: var(--hint-marker);
   font-style: italic;
   font-size: 0.8rem;
 }

@@ -10,29 +10,29 @@
   justify-content: space-between;
   margin-bottom: 20px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .history-header h3 {
   margin: 0;
   flex: 1;
   text-align: center;
-  color: white;
+  color: var(--text-primary);
 }
 
 .back-btn {
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  color: white;
+  color: var(--text-primary);
   cursor: pointer;
   font-size: 0.9rem;
   transition: background 0.2s;
 }
 
 .back-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--border-color);
 }
 
 .clear-btn {
@@ -92,7 +92,7 @@
 }
 
 .item-main:hover {
-  background: var(--btn-hover-bg);
+  background: var(--input-bg);
 }
 
 .item-info {
@@ -109,6 +109,7 @@
 
 .item-mode {
   font-weight: 500;
+  color: var(--text-primary);
 }
 
 .item-difficulty {
@@ -128,11 +129,12 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 4px;
+  color: var(--text-primary);
 }
 
 .result-text.blackwin,
 .result-text.whitewin {
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .item-moves {
@@ -160,11 +162,11 @@
 }
 
 .score-excellent {
-  color: #28a745;
+  color: #4caf50;
 }
 
 .score-good {
-  color: #17a2b8;
+  color: #29b6f6;
 }
 
 .score-average {
@@ -172,7 +174,7 @@
 }
 
 .score-poor {
-  color: #dc3545;
+  color: #ef5350;
 }
 
 .delete-btn {
@@ -199,14 +201,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
 }
 
-.confirm-dialog {
+.game-history .confirm-dialog {
   background: var(--card-bg);
   padding: 20px 30px;
   border-radius: 8px;
@@ -214,11 +216,12 @@
   max-width: 300px;
 }
 
-.confirm-dialog h4 {
+.game-history .confirm-dialog h4 {
   margin: 0 0 10px 0;
+  color: var(--text-primary);
 }
 
-.confirm-dialog p {
+.game-history .confirm-dialog p {
   margin: 0 0 20px 0;
   color: var(--text-secondary);
 }
@@ -246,11 +249,11 @@
 }
 
 .confirm-buttons .cancel-btn {
-  background: var(--btn-bg);
+  background: var(--input-bg);
   border: 1px solid var(--border-color);
-  color: var(--text-color);
+  color: var(--text-primary);
 }
 
 .confirm-buttons .cancel-btn:hover {
-  background: var(--btn-hover-bg);
+  background: var(--border-color);
 }

@@ -18,8 +18,8 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--card-bg);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .settings-btn:hover {
@@ -44,9 +44,9 @@
   top: 100%;
   right: 0;
   margin-top: 8px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px var(--shadow-color);
   overflow: hidden;
 }
 
@@ -61,10 +61,11 @@
   text-align: left;
   white-space: nowrap;
   transition: background 0.2s ease;
+  color: var(--text-primary);
 }
 
 .theme-menu button:hover {
-  background: #f5f5f5;
+  background: var(--input-bg);
 }
 
 .export-btn:disabled,

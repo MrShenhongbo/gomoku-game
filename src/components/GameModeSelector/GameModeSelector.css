@@ -1,15 +1,15 @@
 .mode-selector {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--card-bg);
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .mode-selector h3 {
   margin: 0 0 12px 0;
   text-align: center;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1rem;
 }
 
@@ -23,9 +23,10 @@
 .mode-btn {
   padding: 8px 16px;
   font-size: 0.9rem;
-  border: 2px solid #ddd;
+  border: 2px solid var(--border-color);
   border-radius: 6px;
-  background: white;
+  background: var(--card-bg);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -52,7 +53,7 @@
 }
 
 .ai-options {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--border-color);
   padding-top: 12px;
   margin-top: 12px;
 }
@@ -65,7 +66,7 @@
   display: block;
   margin-bottom: 6px;
   font-weight: bold;
-  color: #555;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
@@ -78,9 +79,10 @@
 .option-btn {
   padding: 6px 12px;
   font-size: 0.85rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
-  background: white;
+  background: var(--card-bg);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -90,7 +92,7 @@
 }
 
 .option-btn.active {
-  background: #e3f2fd;
+  background: var(--input-bg-active);
   border-color: #2196f3;
   color: #1976d2;
 }
@@ -114,7 +116,7 @@
 }
 
 .rule-options {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--border-color);
   padding-top: 12px;
   margin-top: 12px;
 }

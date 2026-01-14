@@ -13,9 +13,8 @@ interface SettingsProps {
 }
 
 const THEME_LABELS: Record<Theme, string> = {
-  classic: '🎨',
+  classic: '☀️',
   dark: '🌙',
-  green: '🌿',
 };
 
 export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHistory, onExport, onImport, canExport }: SettingsProps) {
@@ -78,9 +77,8 @@ export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHi
         </button>
         {showThemeMenu && (
           <div className="theme-menu">
-            <button onClick={() => handleThemeSelect('classic')}>🎨 经典</button>
+            <button onClick={() => handleThemeSelect('classic')}>☀️ 亮色</button>
             <button onClick={() => handleThemeSelect('dark')}>🌙 深色</button>
-            <button onClick={() => handleThemeSelect('green')}>🌿 护眼</button>
           </div>
         )}
       </div>

@@ -35,7 +35,7 @@
 
 .coord-label {
   font-size: 11px;
-  color: #666;
+  color: var(--coord-color, #666);
   font-weight: 500;
   user-select: none;
 }
@@ -68,7 +68,7 @@
 }
 
 .board {
-  background: linear-gradient(135deg, #deb887 0%, #d2a679 100%);
+  background: var(--board-bg, linear-gradient(135deg, #deb887 0%, #d2a679 100%));
   padding: 10px;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
@@ -102,7 +102,7 @@
 .cell-cross::after {
   content: '';
   position: absolute;
-  background: #8b7355;
+  background: var(--board-line, #8b7355);
 }
 
 .cell-cross::before {
@@ -167,7 +167,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #ff4444;
+  background: var(--last-move-marker, #ff4444);
 }
 
 .stone.winning {
@@ -191,7 +191,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #4a90d9;
+  background: var(--hint-marker, #4a90d9);
   z-index: 1;
   animation: hint-blink 0.8s ease-in-out infinite;
 }
@@ -199,4 +199,16 @@
 @keyframes hint-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
+}
+
+/* 经典主题白棋样式 */
+[data-theme="classic"] .stone.white {
+  background: radial-gradient(circle at 30% 30%, #faf8f2, #e8e4dc);
+  border: 1px solid #b8a88a;
+}
+
+/* 深色主题白棋样式 */
+[data-theme="dark"] .stone.white {
+  background: radial-gradient(circle at 30% 30%, #f0ece4, #d4cfc4);
+  border: 1px solid #5a5a5a;
 }

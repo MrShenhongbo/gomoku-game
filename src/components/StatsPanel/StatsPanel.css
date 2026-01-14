@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--overlay-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,11 +12,11 @@
 }
 
 .stats-panel {
-  background: white;
+  background: var(--card-bg);
   border-radius: 12px;
   padding: 20px;
   min-width: 280px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px var(--shadow-color);
 }
 
 .stats-header {
@@ -29,7 +29,7 @@
 .stats-header h3 {
   margin: 0;
   font-size: 1.1rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .stats-panel .close-btn {
@@ -37,7 +37,7 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #666;
+  color: var(--text-secondary);
   padding: 0;
   line-height: 1;
 }
@@ -54,19 +54,19 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: #f5f5f5;
+  background: var(--input-bg);
   border-radius: 6px;
 }
 
 .stat-label {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .stat-value {
   font-weight: bold;
   font-size: 1.1rem;
-  color: #333;
+  color: var(--text-primary);
 }
 
 .stat-item.win .stat-value {
@@ -82,26 +82,30 @@
 }
 
 .stat-item.rate {
-  background: #e3f2fd;
+  background: var(--input-bg-active);
 }
 
 .stat-item.rate .stat-value {
   color: #1976d2;
 }
 
+[data-theme="dark"] .stat-item.rate .stat-value {
+  color: #64b5f6;
+}
+
 .reset-btn {
   width: 100%;
   padding: 10px;
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #666;
+  color: var(--text-secondary);
   transition: all 0.2s ease;
 }
 
 .reset-btn:hover {
-  background: #e0e0e0;
-  color: #333;
+  background: var(--border-color);
+  color: var(--text-primary);
 }
