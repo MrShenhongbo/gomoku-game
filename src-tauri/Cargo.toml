@@ -1,6 +1,6 @@
 [package]
 name = "gomoku-game"
-version = "1.0.0"
+version = "1.0.2"
 description = "A modern Gomoku (Five in a Row) desktop game built with Tauri 2 + React + Rust"
 authors = ["MrShenhongbo"]
 license = "MIT"
