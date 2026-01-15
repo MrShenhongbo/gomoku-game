@@ -18,6 +18,29 @@ export function useGame() {
   const [error, setError] = useState<string | null>(null);
   const aiMoveInProgress = useRef(false);
 
+  // 使用 ref 存储状态，避免回调函数依赖 gameState 对象导致频繁重建
+  const gameStateRef = useRef(gameState);
+  const isLoadingRef = useRef(isLoading);
+  const isAIThinkingRef = useRef(isAIThinking);
+  const isGettingHintRef = useRef(isGettingHint);
+
+  // 同步 ref
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
+  useEffect(() => {
+    isAIThinkingRef.current = isAIThinking;
+  }, [isAIThinking]);
+
+  useEffect(() => {
+    isGettingHintRef.current = isGettingHint;
+  }, [isGettingHint]);
+
   const fetchGameState = useCallback(async () => {
     try {
       const state = await api.getGameState();
@@ -84,20 +107,21 @@ export function useGame() {
 
   const handleCellClick = useCallback(
     async (row: number, col: number) => {
-      if (!gameState || gameState.status !== 'Playing' || isLoading || isAIThinking) {
+      const state = gameStateRef.current;
+      if (!state || state.status !== 'Playing' || isLoadingRef.current || isAIThinkingRef.current) {
         return;
       }
 
       // 检查是否轮到玩家
       if (
-        gameState.game_mode === 'PvAI' &&
-        gameState.current_player !== gameState.player_stone
+        state.game_mode === 'PvAI' &&
+        state.current_player !== state.player_stone
       ) {
         return;
       }
 
       // 检查位置是否已有棋子
-      if (gameState.board[row][col] !== null) {
+      if (state.board[row][col] !== null) {
         return;
       }
 
@@ -129,11 +153,11 @@ export function useGame() {
         setIsLoading(false);
       }
     },
-    [gameState, isLoading, isAIThinking, fetchGameState, triggerAIMove]
+    [fetchGameState, triggerAIMove]
   );
 
   const handleUndo = useCallback(async () => {
-    if (!gameState || isLoading || isAIThinking) return;
+    if (!gameStateRef.current || isLoadingRef.current || isAIThinkingRef.current) return;
 
     setIsLoading(true);
     setError(null);
@@ -147,11 +171,12 @@ export function useGame() {
     } finally {
       setIsLoading(false);
     }
-  }, [gameState, isLoading, isAIThinking]);
+  }, []);
 
   const handleGetHint = useCallback(async () => {
-    if (!gameState || isLoading || isAIThinking || isGettingHint) return;
-    if (gameState.status !== 'Playing') return;
+    const state = gameStateRef.current;
+    if (!state || isLoadingRef.current || isAIThinkingRef.current || isGettingHintRef.current) return;
+    if (state.status !== 'Playing') return;
 
     setIsGettingHint(true);
     setError(null);
@@ -164,29 +189,30 @@ export function useGame() {
     } finally {
       setIsGettingHint(false);
     }
-  }, [gameState, isLoading, isAIThinking, isGettingHint]);
+  }, []);
 
   const clearHint = useCallback(() => {
     setHintPosition(null);
   }, []);
 
   const handleSurrender = useCallback(async () => {
-    if (!gameState || isLoading || isAIThinking) return;
-    if (gameState.status !== 'Playing') return;
+    const state = gameStateRef.current;
+    if (!state || isLoadingRef.current || isAIThinkingRef.current) return;
+    if (state.status !== 'Playing') return;
 
     setIsLoading(true);
     setError(null);
     setHintPosition(null);
 
     try {
-      const state = await api.surrender();
-      setGameState(state);
+      const newState = await api.surrender();
+      setGameState(newState);
     } catch (e) {
       setError(String(e));
     } finally {
       setIsLoading(false);
     }
-  }, [gameState, isLoading, isAIThinking]);
+  }, []);
 
   return {
     gameState,

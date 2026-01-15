@@ -30,6 +30,14 @@ export function PuzzleMode({ onBack }: PuzzleModeProps) {
   const [showHint, setShowHint] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [lastMove, setLastMove] = useState<Position | null>(null);
+  // 使用 useState 缓存已完成的残局，避免每次渲染都读取 localStorage
+  const [completedPuzzles, setCompletedPuzzles] = useState<number[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('completedPuzzles') || '[]');
+    } catch {
+      return [];
+    }
+  });
 
   // 加载残局列表
   useEffect(() => {
@@ -81,10 +89,10 @@ export function PuzzleMode({ onBack }: PuzzleModeProps) {
       setMessage({ text: result.message, type: 'success' });
       setCompleted(true);
       // 更新本地完成记录
-      const completedPuzzles = JSON.parse(localStorage.getItem('completedPuzzles') || '[]');
       if (!completedPuzzles.includes(currentPuzzle.id)) {
-        completedPuzzles.push(currentPuzzle.id);
-        localStorage.setItem('completedPuzzles', JSON.stringify(completedPuzzles));
+        const newCompletedPuzzles = [...completedPuzzles, currentPuzzle.id];
+        setCompletedPuzzles(newCompletedPuzzles);
+        localStorage.setItem('completedPuzzles', JSON.stringify(newCompletedPuzzles));
       }
     } else if (result.correct) {
       setMessage({ text: result.message, type: 'info' });
@@ -121,9 +129,6 @@ export function PuzzleMode({ onBack }: PuzzleModeProps) {
       selectPuzzle(puzzleList[currentIndex + 1].id);
     }
   };
-
-  // 获取已完成的残局
-  const completedPuzzles = JSON.parse(localStorage.getItem('completedPuzzles') || '[]');
 
   if (!currentPuzzle) {
     // 显示残局列表

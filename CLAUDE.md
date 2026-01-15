@@ -116,7 +116,9 @@ cargo clippy
 - Killer Move 启发：记录每个深度导致 Beta 剪枝的走法（每层 2 个），优先搜索这些走法以提升剪枝效率
 - 走法排序优先级：置换表最佳走法 > Killer Move > `quick_evaluate_position` 快速评估分数
 - 按线评估：`evaluate_board` 扫描 88 条线而非 225 个点，避免重复计算
-- 候选位置优化：`Board` 维护 `stone_positions` 列表，只遍历已落子位置的邻域；`undo_move` 使用 `swap_remove` 实现 O(1) 复杂度
+- 候选位置优化：`Board` 维护 `stone_positions` 列表，只遍历已落子位置的邻域；使用 `[bool; 225]` 位图代替 HashSet 避免哈希开销；`undo_move` 使用 `swap_remove` 实现 O(1) 复杂度
+- 热点函数内联：`Board::get`、`is_empty`、`is_valid_position` 等高频调用函数添加 `#[inline]` 标注
+- 残局题库缓存：使用 `lazy_static` 将 50 道残局题目缓存为静态常量，避免每次查询都重新创建
 
 **禁手规则**：支持连珠规则（Renju），黑棋禁止三三、四四、长连。禁手检测在 `rules.rs` 中实现。
 
@@ -148,11 +150,17 @@ cargo clippy
 - `Cell` 组件使用 `React.memo` 避免不必要重渲染
 - `winningPositions` 转为 Set 实现 O(1) 查找
 - 回调函数使用 `useCallback` 缓存，确保 memo 生效
+- `useGame` hook 使用 `useRef` 存储状态，避免回调函数依赖 `gameState` 对象导致频繁重建
+- `Timer` 组件使用 `useRef` 存储 `onTimeout` 回调，避免 interval 不必要重置
+- `ReplayPanel` 组件正确清理 interval，防止内存泄漏
+- `PuzzleMode` 组件使用 `useState` 缓存 localStorage 数据，避免每次渲染都读取
 
 **前端代码质量**：
 - AudioContext 清理：`useSound` hook 添加 `useEffect` cleanup 逻辑，组件卸载时关闭 AudioContext 防止内存泄漏
 - API 错误处理：`gameApi.ts` 添加统一的 `invokeWithErrorHandling` 包装函数，所有 Tauri 命令调用都有错误日志
 - 无障碍访问：`Cell` 组件添加 `role="button"`、`aria-label`、`tabIndex` 和键盘导航支持；`Settings` 组件为 emoji 按钮添加 `aria-label`
+
+**安全性**：启用 CSP（Content Security Policy）安全策略，限制资源加载来源为 `'self'`，防止 XSS 攻击。
 
 **UI 布局约束**：所有页面元素必须在单个窗口内完整显示，不允许出现滚动条。添加新 UI 元素时需确保窗口尺寸足够容纳，或优化现有布局。
 

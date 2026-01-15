@@ -3,11 +3,10 @@ import './GameInfo.css';
 
 interface GameInfoProps {
   gameState: GameSnapshot;
-  isLoading: boolean;
   isAIThinking?: boolean;
 }
 
-export function GameInfo({ gameState, isLoading: _isLoading, isAIThinking }: GameInfoProps) {
+export function GameInfo({ gameState, isAIThinking }: GameInfoProps) {
   const getStatusText = () => {
     switch (gameState.status) {
       case 'BlackWin':

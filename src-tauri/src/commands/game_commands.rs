@@ -44,7 +44,7 @@ pub fn make_move(state: State<GameState>, row: usize, col: usize) -> Result<Move
 #[tauri::command]
 pub async fn ai_move(state: State<'_, GameState>) -> Result<AIMoveResult, String> {
     // 从状态中提取 AI 计算所需的数据
-    let (board, ai_stone, depth, is_ai_turn) = {
+    let (board, ai_stone, depth) = {
         let game = state.inner.lock().unwrap();
 
         if !game.is_ai_turn() {
@@ -59,17 +59,8 @@ pub async fn ai_move(state: State<'_, GameState>) -> Result<AIMoveResult, String
             game.board.clone(),
             game.current_player,
             game.ai_difficulty.search_depth(),
-            true,
         )
     };
-
-    if !is_ai_turn {
-        return Ok(AIMoveResult {
-            position: None,
-            move_result: None,
-            error: Some("不是 AI 的回合".to_string()),
-        });
-    }
 
     // 在单独的线程中执行 AI 计算，避免阻塞主线程
     let best_pos = tokio::task::spawn_blocking(move || {

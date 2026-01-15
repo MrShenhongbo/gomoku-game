@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use super::types::{Position, Stone};
 
 pub const BOARD_SIZE: usize = 15;
+const TOTAL_CELLS: usize = BOARD_SIZE * BOARD_SIZE; // 225
 
 #[derive(Debug, Clone)]
 pub struct Board {
@@ -19,6 +19,7 @@ impl Board {
         }
     }
 
+    #[inline]
     pub fn get(&self, pos: Position) -> Option<Stone> {
         if self.is_valid_position(pos) {
             self.cells[pos.row][pos.col]
@@ -40,16 +41,20 @@ impl Board {
         Ok(())
     }
 
+    #[inline]
     pub fn is_valid_position(&self, pos: Position) -> bool {
         pos.row < BOARD_SIZE && pos.col < BOARD_SIZE
     }
 
+    #[inline]
     pub fn is_empty(&self, pos: Position) -> bool {
         self.is_valid_position(pos) && self.cells[pos.row][pos.col].is_none()
     }
 
     pub fn get_candidate_positions(&self) -> Vec<Position> {
-        let mut candidates = HashSet::new();
+        // 使用位图代替 HashSet，避免哈希开销
+        let mut seen = [false; TOTAL_CELLS];
+        let mut candidates = Vec::new();
 
         // 只遍历已落子的位置，而非整个棋盘
         for &pos in &self.stone_positions {
@@ -62,9 +67,13 @@ impl Board {
                         && nc >= 0
                         && nc < BOARD_SIZE as i32
                     {
-                        let candidate = Position::new(nr as usize, nc as usize);
-                        if self.is_empty(candidate) {
-                            candidates.insert(candidate);
+                        let idx = nr as usize * BOARD_SIZE + nc as usize;
+                        if !seen[idx] {
+                            seen[idx] = true;
+                            let candidate = Position::new(nr as usize, nc as usize);
+                            if self.is_empty(candidate) {
+                                candidates.push(candidate);
+                            }
                         }
                     }
                 }
@@ -75,9 +84,10 @@ impl Board {
             return vec![Position::new(BOARD_SIZE / 2, BOARD_SIZE / 2)];
         }
 
-        candidates.into_iter().collect()
+        candidates
     }
 
+    #[inline]
     pub fn is_full(&self) -> bool {
         self.move_count >= (BOARD_SIZE * BOARD_SIZE) as u32
     }

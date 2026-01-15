@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Position, Stone } from '../../types/game';
 import './ReplayPanel.css';
 
@@ -24,6 +24,30 @@ function positionToNotation(pos: Position): string {
 
 export function ReplayPanel({ moves, currentStep, onStepChange, onClose }: ReplayPanelProps) {
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
+  const intervalRef = useRef<number | null>(null);
+  const stepRef = useRef(currentStep);
+
+  // 同步 stepRef
+  useEffect(() => {
+    stepRef.current = currentStep;
+  }, [currentStep]);
+
+  // 清理 interval
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current !== null) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  const stopAutoPlay = useCallback(() => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setIsAutoPlaying(false);
+  }, []);
 
   const handleFirst = () => onStepChange(0);
   const handlePrev = () => onStepChange(Math.max(0, currentStep - 1));
@@ -32,20 +56,18 @@ export function ReplayPanel({ moves, currentStep, onStepChange, onClose }: Repla
 
   const handleAutoPlay = () => {
     if (isAutoPlaying) {
-      setIsAutoPlaying(false);
+      stopAutoPlay();
       return;
     }
 
     setIsAutoPlaying(true);
-    let step = currentStep;
-    const interval = setInterval(() => {
-      step += 1;
-      if (step > moves.length) {
-        clearInterval(interval);
-        setIsAutoPlaying(false);
+    intervalRef.current = window.setInterval(() => {
+      const nextStep = stepRef.current + 1;
+      if (nextStep > moves.length) {
+        stopAutoPlay();
         return;
       }
-      onStepChange(step);
+      onStepChange(nextStep);
     }, 800);
   };
 

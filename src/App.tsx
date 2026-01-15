@@ -456,7 +456,6 @@ function App() {
           <div className="game-main">
             <GameInfo
               gameState={gameState}
-              isLoading={isLoading}
               isAIThinking={isAIThinking}
             />
             {!isAIvAI && (

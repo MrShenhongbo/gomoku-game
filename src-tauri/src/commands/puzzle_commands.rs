@@ -1,3 +1,4 @@
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 
 /// 残局题目
@@ -34,16 +35,21 @@ pub struct PuzzleListItem {
     pub description: String,
 }
 
+// 使用 lazy_static 缓存题库，避免每次调用都重新创建
+lazy_static! {
+    static ref ALL_PUZZLES: Vec<Puzzle> = create_all_puzzles();
+}
+
 /// 获取所有残局列表（按难度和ID排序）
 #[tauri::command]
 pub fn get_puzzle_list() -> Vec<PuzzleListItem> {
-    let mut puzzles: Vec<PuzzleListItem> = get_all_puzzles()
-        .into_iter()
+    let mut puzzles: Vec<PuzzleListItem> = ALL_PUZZLES
+        .iter()
         .map(|p| PuzzleListItem {
             id: p.id,
-            name: p.name,
+            name: p.name.clone(),
             difficulty: p.difficulty,
-            description: p.description,
+            description: p.description.clone(),
         })
         .collect();
 
@@ -61,13 +67,13 @@ pub fn get_puzzle_list() -> Vec<PuzzleListItem> {
 /// 获取指定残局详情
 #[tauri::command]
 pub fn get_puzzle(id: u32) -> Option<Puzzle> {
-    get_all_puzzles().into_iter().find(|p| p.id == id)
+    ALL_PUZZLES.iter().find(|p| p.id == id).cloned()
 }
 
 /// 检查走法是否正确
 #[tauri::command]
 pub fn check_puzzle_move(id: u32, moves: Vec<(usize, usize)>) -> PuzzleCheckResult {
-    let puzzle = match get_all_puzzles().into_iter().find(|p| p.id == id) {
+    let puzzle = match ALL_PUZZLES.iter().find(|p| p.id == id) {
         Some(p) => p,
         None => {
             return PuzzleCheckResult {
@@ -117,8 +123,8 @@ pub struct PuzzleCheckResult {
     pub message: String,
 }
 
-/// 内置残局题库
-fn get_all_puzzles() -> Vec<Puzzle> {
+/// 内置残局题库（仅在初始化时调用一次）
+fn create_all_puzzles() -> Vec<Puzzle> {
     vec![
         // 简单难度 - 直接连五
         Puzzle {

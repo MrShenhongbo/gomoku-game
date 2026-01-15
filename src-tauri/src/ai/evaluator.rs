@@ -175,37 +175,6 @@ fn pattern_score(pattern: &LinePattern) -> i32 {
     }
 }
 
-fn scan_direction(
-    board: &Board,
-    pos: Position,
-    stone: Stone,
-    dr: i32,
-    dc: i32,
-) -> (usize, bool) {
-    let mut count = 0;
-    let mut r = pos.row as i32 + dr;
-    let mut c = pos.col as i32 + dc;
-
-    while r >= 0 && r < BOARD_SIZE as i32 && c >= 0 && c < BOARD_SIZE as i32 {
-        let check_pos = Position::new(r as usize, c as usize);
-        match board.get(check_pos) {
-            Some(s) if s == stone => {
-                count += 1;
-                r += dr;
-                c += dc;
-            }
-            Some(_) => {
-                return (count, false); // 被对方堵住
-            }
-            None => {
-                return (count, true); // 开放端
-            }
-        }
-    }
-
-    (count, false) // 到达边界
-}
-
 /// 快速评估单个位置的价值（用于候选位置排序）
 /// 评估如果在该位置落子，能形成的棋型价值
 pub fn quick_evaluate_position(board: &Board, pos: Position, stone: Stone) -> i32 {
@@ -225,9 +194,8 @@ pub fn quick_evaluate_position(board: &Board, pos: Position, stone: Stone) -> i3
     }
 
     // 中心位置加分
-    let center = BOARD_SIZE / 2;
-    let dist_to_center = (pos.row as i32 - center as i32).abs()
-        + (pos.col as i32 - center as i32).abs();
+    const CENTER: i32 = (BOARD_SIZE / 2) as i32;
+    let dist_to_center = (pos.row as i32 - CENTER).abs() + (pos.col as i32 - CENTER).abs();
     score += (10 - dist_to_center).max(0);
 
     score
@@ -244,15 +212,15 @@ fn analyze_line_for_empty(
     let mut count = 1; // 假设该位置已落子
     let mut open_ends = 0;
 
-    // 正向扫描
-    let (c1, open1) = scan_direction(board, pos, stone, dr, dc);
+    // 正向扫描（复用 count_forward）
+    let (c1, open1) = count_forward(board, pos, stone, dr, dc);
     count += c1;
     if open1 {
         open_ends += 1;
     }
 
     // 反向扫描
-    let (c2, open2) = scan_direction(board, pos, stone, -dr, -dc);
+    let (c2, open2) = count_forward(board, pos, stone, -dr, -dc);
     count += c2;
     if open2 {
         open_ends += 1;

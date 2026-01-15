@@ -17,6 +17,13 @@ export function Timer({ mode, seconds, currentPlayer, isPlaying, onTimeout }: Ti
   const [currentMoveTime, setCurrentMoveTime] = useState(mode === 'perMove' ? seconds : 0);
   const intervalRef = useRef<number | null>(null);
   const hasTimedOutRef = useRef(false);
+  // 使用 ref 存储回调，避免 onTimeout 变化导致 interval 重置
+  const onTimeoutRef = useRef(onTimeout);
+
+  // 同步 onTimeout ref
+  useEffect(() => {
+    onTimeoutRef.current = onTimeout;
+  }, [onTimeout]);
 
   // 重置计时器
   useEffect(() => {
@@ -51,7 +58,7 @@ export function Timer({ mode, seconds, currentPlayer, isPlaying, onTimeout }: Ti
         setCurrentMoveTime((prev) => {
           if (prev <= 1 && !hasTimedOutRef.current) {
             hasTimedOutRef.current = true;
-            onTimeout();
+            onTimeoutRef.current();
             return 0;
           }
           return Math.max(0, prev - 1);
@@ -61,7 +68,7 @@ export function Timer({ mode, seconds, currentPlayer, isPlaying, onTimeout }: Ti
           setBlackTime((prev) => {
             if (prev <= 1 && !hasTimedOutRef.current) {
               hasTimedOutRef.current = true;
-              onTimeout();
+              onTimeoutRef.current();
               return 0;
             }
             return Math.max(0, prev - 1);
@@ -70,7 +77,7 @@ export function Timer({ mode, seconds, currentPlayer, isPlaying, onTimeout }: Ti
           setWhiteTime((prev) => {
             if (prev <= 1 && !hasTimedOutRef.current) {
               hasTimedOutRef.current = true;
-              onTimeout();
+              onTimeoutRef.current();
               return 0;
             }
             return Math.max(0, prev - 1);
@@ -85,7 +92,7 @@ export function Timer({ mode, seconds, currentPlayer, isPlaying, onTimeout }: Ti
         intervalRef.current = null;
       }
     };
-  }, [mode, isPlaying, currentPlayer, onTimeout]);
+  }, [mode, isPlaying, currentPlayer]);
 
   if (mode === 'none') {
     return null;
