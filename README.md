@@ -218,6 +218,12 @@ cd src-tauri && cargo check
 # 运行 Rust 测试
 cd src-tauri && cargo test
 
+# 运行前端测试
+npm run test:run
+
+# 前端测试覆盖率
+npm run test:coverage
+
 # 格式化 Rust 代码
 cd src-tauri && cargo fmt
 

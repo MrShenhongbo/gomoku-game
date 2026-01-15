@@ -80,3 +80,74 @@ pub enum RuleSet {
     Standard,  // 标准规则，无禁手
     Renju,     // 连珠规则，黑棋有禁手
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_stone_opponent() {
+        assert_eq!(Stone::Black.opponent(), Stone::White);
+        assert_eq!(Stone::White.opponent(), Stone::Black);
+    }
+
+    #[test]
+    fn test_ai_difficulty_search_depth() {
+        assert_eq!(AIDifficulty::Easy.search_depth(), 2);
+        assert_eq!(AIDifficulty::Medium.search_depth(), 4);
+        assert_eq!(AIDifficulty::Hard.search_depth(), 6);
+    }
+
+    #[test]
+    fn test_ai_difficulty_default() {
+        let difficulty: AIDifficulty = Default::default();
+        assert_eq!(difficulty, AIDifficulty::Medium);
+    }
+
+    #[test]
+    fn test_position_new() {
+        let pos = Position::new(7, 8);
+        assert_eq!(pos.row, 7);
+        assert_eq!(pos.col, 8);
+    }
+
+    #[test]
+    fn test_position_equality() {
+        let pos1 = Position::new(7, 7);
+        let pos2 = Position::new(7, 7);
+        let pos3 = Position::new(7, 8);
+        assert_eq!(pos1, pos2);
+        assert_ne!(pos1, pos3);
+    }
+
+    #[test]
+    fn test_rule_set_default() {
+        let rule_set: RuleSet = Default::default();
+        assert_eq!(rule_set, RuleSet::Standard);
+    }
+
+    #[test]
+    fn test_game_status_variants() {
+        assert_ne!(GameStatus::Playing, GameStatus::BlackWin);
+        assert_ne!(GameStatus::BlackWin, GameStatus::WhiteWin);
+        assert_ne!(GameStatus::WhiteWin, GameStatus::Draw);
+    }
+
+    #[test]
+    fn test_game_mode_variants() {
+        assert_ne!(GameMode::PvP, GameMode::PvAI);
+        assert_ne!(GameMode::PvAI, GameMode::AIvAI);
+    }
+
+    #[test]
+    fn test_move_struct() {
+        let m = Move {
+            position: Position::new(7, 7),
+            stone: Stone::Black,
+            move_number: 1,
+        };
+        assert_eq!(m.position.row, 7);
+        assert_eq!(m.stone, Stone::Black);
+        assert_eq!(m.move_number, 1);
+    }
+}

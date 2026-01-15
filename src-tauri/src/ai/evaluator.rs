@@ -228,3 +228,183 @@ fn analyze_line_for_empty(
 
     LinePattern { count, open_ends }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup_board(positions: &[(usize, usize, Stone)]) -> Board {
+        let mut board = Board::new();
+        for &(row, col, stone) in positions {
+            board.place_stone(Position::new(row, col), stone).unwrap();
+        }
+        board
+    }
+
+    #[test]
+    fn test_evaluate_empty_board() {
+        let board = Board::new();
+        let score = evaluate_board(&board, Stone::Black);
+        assert_eq!(score, 0);
+    }
+
+    #[test]
+    fn test_evaluate_five_in_row() {
+        let board = setup_board(&[
+            (7, 3, Stone::Black),
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        let score = evaluate_board(&board, Stone::Black);
+        // 五连应该得到很高的分数
+        assert!(score >= FIVE);
+    }
+
+    #[test]
+    fn test_evaluate_live_four() {
+        // 活四：四子连续，两端开放
+        let board = setup_board(&[
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        let score = evaluate_board(&board, Stone::Black);
+        // 活四应该得到较高分数
+        assert!(score >= LIVE_FOUR);
+    }
+
+    #[test]
+    fn test_evaluate_opponent_threat() {
+        // 对手有活四，己方分数应该为负
+        let board = setup_board(&[
+            (7, 4, Stone::White),
+            (7, 5, Stone::White),
+            (7, 6, Stone::White),
+            (7, 7, Stone::White),
+        ]);
+        let score = evaluate_board(&board, Stone::Black);
+        // 对手有活四，己方评估应该为负
+        assert!(score < 0);
+    }
+
+    #[test]
+    fn test_evaluate_live_three() {
+        // 活三：三子连续，两端开放
+        let board = setup_board(&[
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        let score = evaluate_board(&board, Stone::Black);
+        assert!(score >= LIVE_THREE);
+    }
+
+    #[test]
+    fn test_quick_evaluate_position_center() {
+        let board = Board::new();
+        let center_score = quick_evaluate_position(&board, Position::new(7, 7), Stone::Black);
+        let corner_score = quick_evaluate_position(&board, Position::new(0, 0), Stone::Black);
+        // 中心位置应该比角落位置分数高
+        assert!(center_score > corner_score);
+    }
+
+    #[test]
+    fn test_quick_evaluate_position_threat() {
+        // 有三子连续，在末端落子形成四
+        let board = setup_board(&[
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+        ]);
+        // 在 (7, 7) 落子可以形成四
+        let score = quick_evaluate_position(&board, Position::new(7, 7), Stone::Black);
+        // 应该得到较高分数
+        assert!(score > 100);
+    }
+
+    #[test]
+    fn test_quick_evaluate_position_defense() {
+        // 对手有三子连续，需要防守
+        let board = setup_board(&[
+            (7, 4, Stone::White),
+            (7, 5, Stone::White),
+            (7, 6, Stone::White),
+        ]);
+        // 在 (7, 7) 落子可以阻挡对手
+        let score = quick_evaluate_position(&board, Position::new(7, 7), Stone::Black);
+        // 防守位置也应该有分数
+        assert!(score > 0);
+    }
+
+    #[test]
+    fn test_pattern_score_five() {
+        let pattern = LinePattern {
+            count: 5,
+            open_ends: 0,
+        };
+        assert_eq!(pattern_score(&pattern), FIVE);
+    }
+
+    #[test]
+    fn test_pattern_score_live_four() {
+        let pattern = LinePattern {
+            count: 4,
+            open_ends: 2,
+        };
+        assert_eq!(pattern_score(&pattern), LIVE_FOUR);
+    }
+
+    #[test]
+    fn test_pattern_score_rush_four() {
+        let pattern = LinePattern {
+            count: 4,
+            open_ends: 1,
+        };
+        assert_eq!(pattern_score(&pattern), RUSH_FOUR);
+    }
+
+    #[test]
+    fn test_pattern_score_dead_four() {
+        let pattern = LinePattern {
+            count: 4,
+            open_ends: 0,
+        };
+        assert_eq!(pattern_score(&pattern), 0);
+    }
+
+    #[test]
+    fn test_pattern_score_live_three() {
+        let pattern = LinePattern {
+            count: 3,
+            open_ends: 2,
+        };
+        assert_eq!(pattern_score(&pattern), LIVE_THREE);
+    }
+
+    #[test]
+    fn test_pattern_score_sleep_three() {
+        let pattern = LinePattern {
+            count: 3,
+            open_ends: 1,
+        };
+        assert_eq!(pattern_score(&pattern), SLEEP_THREE);
+    }
+
+    #[test]
+    fn test_evaluate_symmetric() {
+        // 对称局面，黑白互换后分数应该相反
+        let board = setup_board(&[
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        let black_score = evaluate_board(&board, Stone::Black);
+        let white_score = evaluate_board(&board, Stone::White);
+        // 黑棋视角分数为正，白棋视角分数为负
+        assert!(black_score > 0);
+        assert!(white_score < 0);
+    }
+}

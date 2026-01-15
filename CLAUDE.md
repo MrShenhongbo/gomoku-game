@@ -44,6 +44,21 @@ cargo fmt
 cargo clippy
 ```
 
+### 测试
+```bash
+# 运行 Rust 测试（94 个测试）
+cd src-tauri && cargo test
+
+# 运行前端测试（47 个测试）
+npm run test:run
+
+# 前端测试（监听模式）
+npm run test
+
+# 前端测试覆盖率
+npm run test:coverage
+```
+
 ## 架构概览
 
 ### 前后端通信
@@ -75,6 +90,8 @@ cargo clippy
 ```
 ├── App.tsx             # 主组件，管理游戏界面切换
 ├── App.css             # 全局样式 + CSS 主题变量
+├── test/               # 测试配置
+│   └── setup.ts        # Vitest 测试环境设置
 ├── contexts/
 │   └── ThemeContext.tsx # 主题上下文（亮色/深色）
 ├── hooks/
@@ -189,3 +206,29 @@ cargo clippy
 - 主题切换（亮色/深色）
 - 游戏统计（胜负记录）
 - 键盘快捷键（Ctrl+Z 悔棋, Ctrl+N 新游戏, H 提示）
+
+## 测试
+
+### 测试框架
+- **Rust 后端**: 使用 Rust 内置测试框架 (`#[cfg(test)]`)
+- **前端**: 使用 Vitest + Testing Library
+
+### 测试覆盖
+| 模块 | 测试数量 | 说明 |
+|------|---------|------|
+| `game/board.rs` | 12 | 棋盘操作测试 |
+| `game/state.rs` | 18 | 游戏状态管理测试 |
+| `game/rules.rs` | 14 | 胜负判定 + 禁手规则测试 |
+| `game/types.rs` | 10 | 类型方法测试 |
+| `ai/transposition.rs` | 14 | Zobrist 哈希 + 置换表测试 |
+| `ai/evaluator.rs` | 15 | 评估函数测试 |
+| `ai/minimax.rs` | 11 | AI 搜索算法测试 |
+| `utils/gameHistory.ts` | 24 | 对局记录工具测试 |
+| `contexts/ThemeContext.tsx` | 6 | 主题 Context 测试 |
+| `components/Board/Cell.tsx` | 17 | Cell 组件测试 |
+
+### CI/CD
+- GitHub Actions 自动运行测试（push/PR 到 main 分支）
+- Rust 测试 + Clippy 代码检查
+- 前端测试 + TypeScript 类型检查
+- 配置文件: `.github/workflows/test.yml`

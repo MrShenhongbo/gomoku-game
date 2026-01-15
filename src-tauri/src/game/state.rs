@@ -221,3 +221,196 @@ impl From<&GameStateInner> for GameSnapshot {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_game_state() {
+        let state = GameStateInner::new();
+        assert_eq!(state.current_player, Stone::Black);
+        assert_eq!(state.status, GameStatus::Playing);
+        assert!(state.move_history.is_empty());
+        assert_eq!(state.game_mode, GameMode::PvP);
+        assert_eq!(state.ai_difficulty, AIDifficulty::Medium);
+        assert!(state.winning_positions.is_none());
+        assert!(state.last_move.is_none());
+    }
+
+    #[test]
+    fn test_reset() {
+        let mut state = GameStateInner::new();
+        state.make_move(Position::new(7, 7)).unwrap();
+        state.make_move(Position::new(7, 8)).unwrap();
+        state.reset();
+        assert_eq!(state.current_player, Stone::Black);
+        assert!(state.move_history.is_empty());
+        assert_eq!(state.status, GameStatus::Playing);
+        assert!(state.last_move.is_none());
+    }
+
+    #[test]
+    fn test_set_mode() {
+        let mut state = GameStateInner::new();
+        state.set_mode(
+            GameMode::PvAI,
+            Some(AIDifficulty::Hard),
+            Some(Stone::White),
+            Some(RuleSet::Renju),
+        );
+        assert_eq!(state.game_mode, GameMode::PvAI);
+        assert_eq!(state.ai_difficulty, AIDifficulty::Hard);
+        assert_eq!(state.player_stone, Stone::White);
+        assert_eq!(state.rule_set, RuleSet::Renju);
+        // set_mode 会调用 reset
+        assert!(state.move_history.is_empty());
+    }
+
+    #[test]
+    fn test_make_move_success() {
+        let mut state = GameStateInner::new();
+        let result = state.make_move(Position::new(7, 7)).unwrap();
+        assert!(result.success);
+        assert!(!result.game_over);
+        assert_eq!(state.current_player, Stone::White);
+        assert_eq!(state.move_history.len(), 1);
+        assert_eq!(state.last_move, Some(Position::new(7, 7)));
+    }
+
+    #[test]
+    fn test_make_move_game_over() {
+        let mut state = GameStateInner::new();
+        state.status = GameStatus::BlackWin;
+        let result = state.make_move(Position::new(7, 7));
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "游戏已结束");
+    }
+
+    #[test]
+    fn test_make_move_win_detection() {
+        let mut state = GameStateInner::new();
+        // 黑棋: (7,3), (7,4), (7,5), (7,6), (7,7) - 五连
+        // 白棋: (8,3), (8,4), (8,5), (8,6)
+        let moves = [
+            (7, 3), (8, 3), // 黑, 白
+            (7, 4), (8, 4), // 黑, 白
+            (7, 5), (8, 5), // 黑, 白
+            (7, 6), (8, 6), // 黑, 白
+            (7, 7),         // 黑 - 获胜
+        ];
+        for (i, (row, col)) in moves.iter().enumerate() {
+            let result = state.make_move(Position::new(*row, *col)).unwrap();
+            if i == 8 {
+                // 最后一步黑棋获胜
+                assert!(result.game_over);
+                assert_eq!(result.status, GameStatus::BlackWin);
+                assert!(result.winning_positions.is_some());
+            }
+        }
+    }
+
+    #[test]
+    fn test_undo_move() {
+        let mut state = GameStateInner::new();
+        state.make_move(Position::new(7, 7)).unwrap();
+        state.undo_move().unwrap();
+        assert_eq!(state.current_player, Stone::Black);
+        assert!(state.move_history.is_empty());
+        assert!(state.last_move.is_none());
+    }
+
+    #[test]
+    fn test_undo_move_empty_history() {
+        let mut state = GameStateInner::new();
+        let result = state.undo_move();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "没有可以悔棋的步骤");
+    }
+
+    #[test]
+    fn test_undo_move_restores_last_move() {
+        let mut state = GameStateInner::new();
+        state.make_move(Position::new(7, 7)).unwrap();
+        state.make_move(Position::new(7, 8)).unwrap();
+        state.undo_move().unwrap();
+        assert_eq!(state.last_move, Some(Position::new(7, 7)));
+    }
+
+    #[test]
+    fn test_is_ai_turn_pvp() {
+        let mut state = GameStateInner::new();
+        state.game_mode = GameMode::PvP;
+        assert!(!state.is_ai_turn());
+    }
+
+    #[test]
+    fn test_is_ai_turn_pvai_player_turn() {
+        let mut state = GameStateInner::new();
+        state.game_mode = GameMode::PvAI;
+        state.player_stone = Stone::Black;
+        state.current_player = Stone::Black;
+        assert!(!state.is_ai_turn());
+    }
+
+    #[test]
+    fn test_is_ai_turn_pvai_ai_turn() {
+        let mut state = GameStateInner::new();
+        state.game_mode = GameMode::PvAI;
+        state.player_stone = Stone::Black;
+        state.current_player = Stone::White;
+        assert!(state.is_ai_turn());
+    }
+
+    #[test]
+    fn test_is_ai_turn_aivai() {
+        let mut state = GameStateInner::new();
+        state.game_mode = GameMode::AIvAI;
+        assert!(state.is_ai_turn());
+    }
+
+    #[test]
+    fn test_is_ai_turn_game_over() {
+        let mut state = GameStateInner::new();
+        state.game_mode = GameMode::PvAI;
+        state.status = GameStatus::BlackWin;
+        assert!(!state.is_ai_turn());
+    }
+
+    #[test]
+    fn test_surrender() {
+        let mut state = GameStateInner::new();
+        state.surrender().unwrap();
+        // 黑棋认输，白棋获胜
+        assert_eq!(state.status, GameStatus::WhiteWin);
+    }
+
+    #[test]
+    fn test_surrender_white() {
+        let mut state = GameStateInner::new();
+        state.current_player = Stone::White;
+        state.surrender().unwrap();
+        // 白棋认输，黑棋获胜
+        assert_eq!(state.status, GameStatus::BlackWin);
+    }
+
+    #[test]
+    fn test_surrender_game_over() {
+        let mut state = GameStateInner::new();
+        state.status = GameStatus::BlackWin;
+        let result = state.surrender();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "游戏已结束");
+    }
+
+    #[test]
+    fn test_game_snapshot_from_state() {
+        let mut state = GameStateInner::new();
+        state.make_move(Position::new(7, 7)).unwrap();
+        let snapshot = GameSnapshot::from(&state);
+        assert_eq!(snapshot.current_player, Stone::White);
+        assert_eq!(snapshot.move_count, 1);
+        assert_eq!(snapshot.last_move, Some(Position::new(7, 7)));
+        assert_eq!(snapshot.board[7][7], Some(Stone::Black));
+    }
+}

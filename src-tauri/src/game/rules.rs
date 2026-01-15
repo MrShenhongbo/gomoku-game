@@ -381,4 +381,126 @@ mod tests {
 
         assert!(is_win(&board, Position::new(7, 5)));
     }
+
+    // ===== 禁手规则测试 =====
+
+    #[test]
+    fn test_overline_foul() {
+        // 黑棋六连 - 长连禁手
+        let board = setup_board_with_stones(&[
+            (7, 2, Stone::Black),
+            (7, 3, Stone::Black),
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        assert_eq!(
+            check_foul(&board, Position::new(7, 5), RuleSet::Renju),
+            Some(FoulType::Overline)
+        );
+    }
+
+    #[test]
+    fn test_no_foul_standard_rules() {
+        // 标准规则下无禁手
+        let board = setup_board_with_stones(&[
+            (7, 2, Stone::Black),
+            (7, 3, Stone::Black),
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        assert_eq!(check_foul(&board, Position::new(7, 5), RuleSet::Standard), None);
+    }
+
+    #[test]
+    fn test_no_foul_white_stone() {
+        // 白棋无禁手
+        let board = setup_board_with_stones(&[
+            (7, 2, Stone::White),
+            (7, 3, Stone::White),
+            (7, 4, Stone::White),
+            (7, 5, Stone::White),
+            (7, 6, Stone::White),
+            (7, 7, Stone::White),
+        ]);
+        assert_eq!(check_foul(&board, Position::new(7, 5), RuleSet::Renju), None);
+    }
+
+    #[test]
+    fn test_double_four_foul() {
+        // 四四禁手：在 (7,7) 落子形成两个四
+        // 水平方向: (7,4), (7,5), (7,6), (7,7) - 四
+        // 垂直方向: (4,7), (5,7), (6,7), (7,7) - 四
+        let board = setup_board_with_stones(&[
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (4, 7, Stone::Black),
+            (5, 7, Stone::Black),
+            (6, 7, Stone::Black),
+            (7, 7, Stone::Black), // 形成四四
+        ]);
+        assert_eq!(
+            check_foul(&board, Position::new(7, 7), RuleSet::Renju),
+            Some(FoulType::DoubleFour)
+        );
+    }
+
+    #[test]
+    fn test_double_three_foul() {
+        // 三三禁手：在 (7,7) 落子形成两个活三
+        // 水平方向: (7,5), (7,6), (7,7) - 活三（两端开放）
+        // 垂直方向: (5,7), (6,7), (7,7) - 活三（两端开放）
+        let board = setup_board_with_stones(&[
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (5, 7, Stone::Black),
+            (6, 7, Stone::Black),
+            (7, 7, Stone::Black), // 形成三三
+        ]);
+        assert_eq!(
+            check_foul(&board, Position::new(7, 7), RuleSet::Renju),
+            Some(FoulType::DoubleThree)
+        );
+    }
+
+    #[test]
+    fn test_no_foul_single_four() {
+        // 单个四不是禁手
+        let board = setup_board_with_stones(&[
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        assert_eq!(check_foul(&board, Position::new(7, 7), RuleSet::Renju), None);
+    }
+
+    #[test]
+    fn test_no_foul_single_three() {
+        // 单个活三不是禁手
+        let board = setup_board_with_stones(&[
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        assert_eq!(check_foul(&board, Position::new(7, 7), RuleSet::Renju), None);
+    }
+
+    #[test]
+    fn test_five_overrides_foul() {
+        // 五连优先于禁手（五连不算禁手）
+        let board = setup_board_with_stones(&[
+            (7, 3, Stone::Black),
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (7, 7, Stone::Black),
+        ]);
+        // 五连不触发长连禁手检测
+        assert!(!check_overline(&board, Position::new(7, 5)));
+    }
 }

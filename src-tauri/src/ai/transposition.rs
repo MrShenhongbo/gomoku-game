@@ -53,7 +53,7 @@ impl Default for ZobristHash {
 }
 
 /// 置换表条目标志
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum TTFlag {
     Exact,      // 精确值
     LowerBound, // 下界（beta 截断）
@@ -124,5 +124,180 @@ impl TranspositionTable {
 impl Default for TranspositionTable {
     fn default() -> Self {
         Self::new(1 << 20) // 约 100 万条目
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_zobrist_hash_new() {
+        let zobrist = ZobristHash::new();
+        assert_eq!(zobrist.hash(), 0);
+    }
+
+    #[test]
+    fn test_zobrist_hash_update() {
+        let mut zobrist = ZobristHash::new();
+        let pos = Position::new(7, 7);
+        zobrist.update(pos, Stone::Black);
+        assert_ne!(zobrist.hash(), 0);
+    }
+
+    #[test]
+    fn test_zobrist_hash_xor_reversible() {
+        let mut zobrist = ZobristHash::new();
+        let pos = Position::new(7, 7);
+        zobrist.update(pos, Stone::Black);
+        let hash_after_place = zobrist.hash();
+        assert_ne!(hash_after_place, 0);
+        // XOR 再次应用相同操作应该恢复原值
+        zobrist.update(pos, Stone::Black);
+        assert_eq!(zobrist.hash(), 0);
+    }
+
+    #[test]
+    fn test_zobrist_different_positions() {
+        let mut z1 = ZobristHash::new();
+        let mut z2 = ZobristHash::new();
+        z1.update(Position::new(0, 0), Stone::Black);
+        z2.update(Position::new(0, 1), Stone::Black);
+        assert_ne!(z1.hash(), z2.hash());
+    }
+
+    #[test]
+    fn test_zobrist_different_stones() {
+        let mut z1 = ZobristHash::new();
+        let mut z2 = ZobristHash::new();
+        z1.update(Position::new(7, 7), Stone::Black);
+        z2.update(Position::new(7, 7), Stone::White);
+        assert_ne!(z1.hash(), z2.hash());
+    }
+
+    #[test]
+    fn test_zobrist_order_independent() {
+        // 落子顺序不影响最终哈希值
+        let mut z1 = ZobristHash::new();
+        let mut z2 = ZobristHash::new();
+
+        z1.update(Position::new(0, 0), Stone::Black);
+        z1.update(Position::new(1, 1), Stone::White);
+
+        z2.update(Position::new(1, 1), Stone::White);
+        z2.update(Position::new(0, 0), Stone::Black);
+
+        assert_eq!(z1.hash(), z2.hash());
+    }
+
+    #[test]
+    fn test_transposition_table_store_and_get() {
+        let mut tt = TranspositionTable::new(1024);
+        let entry = TTEntry {
+            hash: 12345,
+            depth: 4,
+       score: 100,
+            flag: TTFlag::Exact,
+            best_move: Some(Position::new(7, 7)),
+        };
+        tt.store(entry);
+        let retrieved = tt.get(12345);
+        assert!(retrieved.is_some());
+        let r = retrieved.unwrap();
+        assert_eq!(r.score, 100);
+        assert_eq!(r.depth, 4);
+        assert_eq!(r.flag, TTFlag::Exact);
+        assert_eq!(r.best_move, Some(Position::new(7, 7)));
+    }
+
+    #[test]
+    fn test_transposition_table_miss() {
+        let tt = TranspositionTable::new(1024);
+        assert!(tt.get(99999).is_none());
+    }
+
+    #[test]
+    fn test_transpon_table_hash_collision_different_hash() {
+        let mut tt = TranspositionTable::new(1024);
+        let entry = TTEntry {
+            hash: 12345,
+            depth: 4,
+            score: 100,
+            flag: TTFlag::Exact,
+            best_move: None,
+        };
+        tt.store(entry);
+        // 查询不同的哈希值，即使索引相同也应该返回 None
+        let different_hash = 12345 + 1024; // 可能映射到相同索引
+        let retrieved = tt.get(different_hash);
+        // 如果哈希不匹配，应该返回 None
+        if let Some(r) = retrieved {
+            assert_eq!(r.hash, different_hash);
+        }
+    }
+
+    #[test]
+    fn test_transposition_table_replace_deeper() {
+        let mut tt = TranspositionTable::new(1024);
+        let entry1 = TTEntry {
+            hash: 12345,
+            depth: 2,
+            score: 50,
+            flag: TTFlag::Exact,
+            best_move: None,
+        };
+        let entry2 = TTEntry {
+            hash: 12345,
+            depth: 4,
+            score: 100,
+            flag: TTFlag::Exact,
+            best_move: None,
+        };
+        tt.store(entry1);
+        tt.store(entry2);
+        // 相同哈希，深度更大的应该替换
+        assert_eq!(tt.get(12345).unwrap().score, 100);
+    }
+
+    #[test]
+    fn test_transposition_table_same_hash_always_replace() {
+        let mut tt = TranspositionTable::new(1024);
+        let entry1 = TTEntry {
+            hash: 12345,
+            depth: 4,
+            score: 100,
+            flag: TTFlag::Exact,
+            best_move: None,
+        };
+        let entry2 = TTEntry {
+            hash: 12345,
+            depth: 2, // 深度更小
+            score: 50,
+            flag: TTFlag::LowerBound,
+            best_move: None,
+        };
+        tt.store(entry1);
+        tt.store(entry2);
+        // 相同哈希总是更新
+        assert_eq!(tt.get(12345).unwrap().score, 50);
+    }
+
+    #[test]
+    fn test_transposition_table_size_power_of_two() {
+        let tt = TranspositionTable::new(1000);
+        // 1000 应该被调整为 1024 (2^10)
+        assert_eq!(tt.size, 1024);
+    }
+
+    #[test]
+    fn test_tt_flag_variants() {
+        assert_ne!(TTFlag::Exact, TTFlag::LowerBound);
+        assert_ne!(TTFlag::LowerBound, TTFlag::UpperBound);
+    }
+
+    #[test]
+    fn test_zobrist_default() {
+        let zobrist: ZobristHash = Default::default();
+        assert_eq!(zobrist.hash(), 0);
     }
 }

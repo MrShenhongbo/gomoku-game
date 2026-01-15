@@ -291,3 +291,183 @@ fn minimax_with_tt(
 
     best_score
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game::board::BOARD_SIZE;
+
+    fn setup_board(positions: &[(usize, usize, Stone)]) -> Board {
+        let mut board = Board::new();
+        for &(row, col, stone) in positions {
+            board.place_stone(Position::new(row, col), stone).unwrap();
+        }
+        board
+    }
+
+    #[test]
+    fn test_find_best_move_empty_board() {
+        let board = Board::new();
+        let best = find_best_move(&board, Stone::Black, 2);
+        assert!(best.is_some());
+        // 空棋盘应该选择中心附近
+        let pos = best.unwrap();
+        let center = BOARD_SIZE / 2;
+        assert!(pos.row >= center - 2 && pos.row <= center + 2);
+        assert!(pos.col >= center - 2 && pos.col <= center + 2);
+    }
+
+    #[test]
+    fn test_find_best_move_takes_win() {
+        // 黑棋有四连，应该完成五连获胜
+        let board = setup_board(&[
+            (7, 3, Stone::Black),
+            (7, 4, Stone::Black),
+            (7, 5, Stone::Black),
+            (7, 6, Stone::Black),
+            (6, 3, Stone::White),
+            (6, 4, Stone::White),
+            (6, 5, Stone::White),
+        ]);
+        let best = find_best_move(&board, Stone::Black, 4);
+        assert!(best.is_some());
+        let pos = best.unwrap();
+        // 应该在 (7, 2) 或 (7, 7) 完成五连
+        assert!(pos == Position::new(7, 2) || pos == Position::new(7, 7));
+    }
+
+    #[test]
+    fn test_find_best_move_blocks_win() {
+        // 白棋有四连，黑棋应该阻挡
+        let board = setup_board(&[
+            (7, 3, Stone::White),
+            (7, 4, Stone::White),
+            (7, 5, Stone::White),
+            (7, 6, Stone::White),
+            (6, 3, Stone::Black),
+            (6, 4, Stone::Black),
+            (6, 5, Stone::Black),
+        ]);
+        let best = find_best_move(&board, Stone::Black, 4);
+        assert!(best.is_some());
+        let pos = best.unwrap();
+        // 应该阻挡在 (7, 2) 或 (7, 7)
+        assert!(pos == Position::new(7, 2) || pos == Position::new(7, 7));
+    }
+
+    #[test]
+    fn test_find_best_move_single_candidate() {
+        // 只有一个空位
+        let mut board = Board::new();
+        for row in 0..BOARD_SIZE {
+            for col in 0..BOARD_SIZE {
+                if row != 7 || col != 7 {
+                    let stone = if (row + col) % 2 == 0 {
+                        Stone::Black
+                    } else {
+                        Stone::White
+                    };
+                    board.place_stone(Position::new(row, col), stone).unwrap();
+                }
+            }
+        }
+        let best = find_best_move(&board, Stone::Black, 2);
+        assert_eq!(best, Some(Position::new(7, 7)));
+    }
+
+    #[test]
+    fn test_find_best_move_returns_some() {
+        let board = setup_board(&[
+            (7, 7, Stone::Black),
+            (7, 8, Stone::White),
+        ]);
+        let best = find_best_move(&board, Stone::Black, 2);
+        assert!(best.is_some());
+    }
+
+    #[test]
+    fn test_killer_moves_new() {
+        let km = KillerMoves::new();
+        let moves = km.get(0);
+        assert_eq!(moves[0], None);
+        assert_eq!(moves[1], None);
+    }
+
+    #[test]
+    fn test_killer_moves_add() {
+        let mut km = KillerMoves::new();
+        km.add(3, Position::new(7, 7));
+        let moves = km.get(3);
+        assert_eq!(moves[0], Some(Position::new(7, 7)));
+        assert_eq!(moves[1], None);
+    }
+
+    #[test]
+    fn test_killer_moves_replacement() {
+        let mut km = KillerMoves::new();
+        km.add(3, Position::new(7, 7));
+        km.add(3, Position::new(7, 8));
+        let moves = km.get(3);
+        // 新的在前，旧的在后
+        assert_eq!(moves[0], Some(Position::new(7, 8)));
+        assert_eq!(moves[1], Some(Position::new(7, 7)));
+    }
+
+    #[test]
+    fn test_killer_moves_no_duplicate() {
+        let mut km = KillerMoves::new();
+        km.add(3, Position::new(7, 7));
+        km.add(3, Position::new(7, 7)); // 重复添加
+        let moves = km.get(3);
+        assert_eq!(moves[0], Some(Position::new(7, 7)));
+        assert_eq!(moves[1], None); // 不应该有重复
+    }
+
+    #[test]
+    fn test_killer_moves_out_of_bounds() {
+        let mut km = KillerMoves::new();
+        km.add(MAX_DEPTH + 1, Position::new(7, 7)); // 超出范围
+        let moves = km.get(MAX_DEPTH + 1);
+        assert_eq!(moves[0], None);
+        assert_eq!(moves[1], None);
+    }
+
+    #[test]
+    fn test_sort_candidates_tt_best_first() {
+        let board = Board::new();
+        let candidates = vec![
+            Position::new(7, 7),
+            Position::new(7, 8),
+            Position::new(7, 9),
+        ];
+        let sorted = sort_candidates(
+            &board,
+            candidates,
+            Stone::Black,
+            Some(Position::new(7, 9)), // TT 最佳走法
+            [None, None],
+        );
+        // TT 最佳走法应该排在第一位
+        assert_eq!(sorted[0], Position::new(7, 9));
+    }
+
+    #[test]
+    fn test_sort_candidates_killer_priority() {
+        let board = Board::new();
+        let candidates = vec![
+            Position::new(0, 0),
+            Position::new(7, 8),
+            Position::new(7, 9),
+        ];
+        let sorted = sort_candidates(
+            &board,
+            candidates,
+            Stone::Black,
+            None,
+            [Some(Position::new(7, 8)), Some(Position::new(7, 9))],
+        );
+        // Killer moves 应该排在前面
+        assert_eq!(sorted[0], Position::new(7, 8));
+        assert_eq!(sorted[1], Position::new(7, 9));
+    }
+}
