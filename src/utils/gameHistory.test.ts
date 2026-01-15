@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   loadGameHistory,
   saveGameRecord,
@@ -30,6 +30,8 @@ describe('gameHistory', () => {
           moves: [],
           result: 'BlackWin',
           gameMode: 'PvP',
+          ruleSet: 'Standard',
+          moveCount: 0,
           duration: 100,
           qualityScore: 50,
         },
@@ -55,6 +57,8 @@ describe('gameHistory', () => {
         moves: [],
         result: 'BlackWin',
         gameMode: 'PvP',
+        ruleSet: 'Standard',
+        moveCount: 0,
         duration: 100,
         qualityScore: 50,
       };
@@ -71,6 +75,8 @@ describe('gameHistory', () => {
         moves: [],
         result: 'BlackWin',
         gameMode: 'PvP',
+        ruleSet: 'Standard',
+        moveCount: 0,
         duration: 100,
         qualityScore: 50,
       };
@@ -80,6 +86,8 @@ describe('gameHistory', () => {
         moves: [],
         result: 'WhiteWin',
         gameMode: 'PvP',
+        ruleSet: 'Standard',
+        moveCount: 0,
         duration: 200,
         qualityScore: 60,
       };
@@ -99,6 +107,8 @@ describe('gameHistory', () => {
           moves: [],
           result: 'BlackWin',
           gameMode: 'PvP',
+          ruleSet: 'Standard',
+          moveCount: 0,
           duration: 100,
           qualityScore: 50,
         });
@@ -116,6 +126,8 @@ describe('gameHistory', () => {
         moves: [],
         result: 'BlackWin',
         gameMode: 'PvP',
+        ruleSet: 'Standard',
+        moveCount: 0,
         duration: 100,
         qualityScore: 50,
       };
@@ -132,6 +144,8 @@ describe('gameHistory', () => {
         moves: [],
         result: 'BlackWin',
         gameMode: 'PvP',
+        ruleSet: 'Standard',
+        moveCount: 0,
         duration: 100,
         qualityScore: 50,
       });
@@ -141,6 +155,8 @@ describe('gameHistory', () => {
         moves: [],
         result: 'WhiteWin',
         gameMode: 'PvP',
+        ruleSet: 'Standard',
+        moveCount: 0,
         duration: 200,
         qualityScore: 60,
       });
@@ -152,13 +168,15 @@ describe('gameHistory', () => {
   });
 
   describe('clearGameHistory', () => {
-    it('shoul history', () => {
+    it('should clear all history', () => {
       saveGameRecord({
         id: '1',
         date: new Date().toISOString(),
         moves: [],
         result: 'BlackWin',
         gameMode: 'PvP',
+        ruleSet: 'Standard',
+        moveCount: 0,
         duration: 100,
         qualityScore: 50,
       });
