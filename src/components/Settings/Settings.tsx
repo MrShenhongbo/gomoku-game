@@ -37,6 +37,7 @@ export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHi
           className="settings-btn history-btn"
           onClick={onShowHistory}
           title="对局记录"
+          aria-label="对局记录"
         >
           📋
         </button>
@@ -46,6 +47,7 @@ export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHi
           className="settings-btn import-btn"
           onClick={onImport}
           title="导入棋谱"
+          aria-label="导入棋谱"
         >
           📥
         </button>
@@ -56,6 +58,7 @@ export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHi
           onClick={onExport}
           disabled={!canExport}
           title="导出棋谱"
+          aria-label="导出棋谱"
         >
           📤
         </button>
@@ -64,6 +67,7 @@ export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHi
         className={`settings-btn sound-btn ${soundEnabled ? 'on' : 'off'}`}
         onClick={onToggleSound}
         title={soundEnabled ? '关闭音效' : '开启音效'}
+        aria-label={soundEnabled ? '关闭音效' : '开启音效'}
       >
         {soundEnabled ? '🔊' : '🔇'}
       </button>
@@ -72,13 +76,15 @@ export function Settings({ soundEnabled, onToggleSound, showHistoryBtn, onShowHi
           className="settings-btn theme-btn"
           onClick={handleThemeClick}
           title="切换主题"
+          aria-label="切换主题"
+          aria-expanded={showThemeMenu}
         >
           {THEME_LABELS[theme]}
         </button>
         {showThemeMenu && (
-          <div className="theme-menu">
-            <button onClick={() => handleThemeSelect('classic')}>☀️ 亮色</button>
-            <button onClick={() => handleThemeSelect('dark')}>🌙 深色</button>
+          <div className="theme-menu" role="menu">
+            <button onClick={() => handleThemeSelect('classic')} role="menuitem">☀️ 亮色</button>
+            <button onClick={() => handleThemeSelect('dark')} role="menuitem">🌙 深色</button>
           </div>
         )}
       </div>

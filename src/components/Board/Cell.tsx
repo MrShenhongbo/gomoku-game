@@ -13,6 +13,17 @@ interface CellProps {
   onCellClick: (row: number, col: number) => void;
 }
 
+// 生成棋盘位置的无障碍标签
+function getCellLabel(row: number, col: number, stone: Stone | null): string {
+  const colLabel = String.fromCharCode(65 + col); // A-O
+  const rowLabel = 15 - row; // 15-1
+  const position = `${colLabel}${rowLabel}`;
+  if (stone) {
+    return `${position}, ${stone === 'Black' ? '黑棋' : '白棋'}`;
+  }
+  return `${position}, 空位`;
+}
+
 export const Cell = memo(function Cell({
   row,
   col,
@@ -29,8 +40,26 @@ export const Cell = memo(function Cell({
     }
   }, [disabled, onCellClick, row, col]);
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.key === 'Enter' || e.key === ' ') && !disabled) {
+        e.preventDefault();
+        onCellClick(row, col);
+      }
+    },
+    [disabled, onCellClick, row, col]
+  );
+
   return (
-    <div className="cell" onClick={handleClick}>
+    <div
+      className="cell"
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={disabled ? -1 : 0}
+      aria-label={getCellLabel(row, col, stone)}
+      aria-disabled={disabled}
+    >
       <div className="cell-cross" />
       {stone && (
         <div

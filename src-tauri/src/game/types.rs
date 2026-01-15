@@ -25,9 +25,10 @@ pub enum GameMode {
 }
 
 /// AI 难度
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum AIDifficulty {
     Easy,
+    #[default]
     Medium,
     Hard,
 }
@@ -39,12 +40,6 @@ impl AIDifficulty {
             AIDifficulty::Medium => 4,
             AIDifficulty::Hard => 6,
         }
-    }
-}
-
-impl Default for AIDifficulty {
-    fn default() -> Self {
-        AIDifficulty::Medium
     }
 }
 

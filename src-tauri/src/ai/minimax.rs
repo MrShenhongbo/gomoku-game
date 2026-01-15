@@ -9,6 +9,15 @@ const MAX_SCORE: i32 = 1_000_000;
 const MIN_SCORE: i32 = -1_000_000;
 const MAX_DEPTH: usize = 16; // Killer Move 表的最大深度
 
+/// 搜索上下文，封装搜索过程中需要的可变状态
+struct SearchContext<'a> {
+    board: &'a mut Board,
+    zobrist: &'a mut ZobristHash,
+    tt: &'a mut TranspositionTable,
+    killer_moves: &'a mut KillerMoves,
+    ai_stone: Stone,
+}
+
 /// Killer Move 表：记录每个深度导致剪枝的走法
 struct KillerMoves {
     moves: [[Option<Position>; 2]; MAX_DEPTH], // 每个深度存储 2 个 killer move
@@ -91,13 +100,10 @@ pub fn find_best_move(board: &Board, ai_stone: Stone, max_depth: u32) -> Option<
     let mut zobrist = ZobristHash::new();
     let mut killer_moves = KillerMoves::new();
 
-    // 根据当前棋盘状态初始化哈希值
-    for row in 0..15 {
-        for col in 0..15 {
-            let pos = Position::new(row, col);
-            if let Some(stone) = board.get(pos) {
-                zobrist.update(pos, stone);
-            }
+    // 根据当前棋盘状态初始化哈希值（只遍历已落子位置）
+    for &pos in board.stone_positions() {
+        if let Some(stone) = board.get(pos) {
+            zobrist.update(pos, stone);
         }
     }
 
@@ -130,20 +136,24 @@ pub fn find_best_move(board: &Board, ai_stone: Stone, max_depth: u32) -> Option<
                     return Some(pos);
                 }
 
+                let mut ctx = SearchContext {
+                    board: &mut board_clone,
+                    zobrist: &mut zobrist,
+                    tt: &mut tt,
+                    killer_moves: &mut killer_moves,
+                    ai_stone,
+                };
+
                 let score = minimax_with_tt(
-                    &mut board_clone,
-                    &mut zobrist,
-                    &mut tt,
-                    &mut killer_moves,
+                    &mut ctx,
                     depth.saturating_sub(1),
                     alpha,
                     MAX_SCORE,
                     false,
-                    ai_stone,
                 );
 
-                zobrist.update(pos, ai_stone); // XOR 撤销
-                board_clone.undo_move(pos);
+                ctx.zobrist.update(pos, ai_stone); // XOR 撤销
+                ctx.board.undo_move(pos);
 
                 if score > best_score {
                     best_score = score;
@@ -165,22 +175,18 @@ pub fn find_best_move(board: &Board, ai_stone: Stone, max_depth: u32) -> Option<
 }
 
 fn minimax_with_tt(
-    board: &mut Board,
-    zobrist: &mut ZobristHash,
-    tt: &mut TranspositionTable,
-    killer_moves: &mut KillerMoves,
+    ctx: &mut SearchContext,
     depth: u32,
     mut alpha: i32,
     mut beta: i32,
     is_maximizing: bool,
-    ai_stone: Stone,
 ) -> i32 {
     let original_alpha = alpha;
-    let hash = zobrist.hash();
+    let hash = ctx.zobrist.hash();
 
     // 查询置换表
     let mut tt_best_move = None;
-    if let Some(entry) = tt.get(hash) {
+    if let Some(entry) = ctx.tt.get(hash) {
         if entry.depth >= depth {
             match entry.flag {
                 TTFlag::Exact => return entry.score,
@@ -194,37 +200,37 @@ fn minimax_with_tt(
         tt_best_move = entry.best_move;
     }
 
-    if depth == 0 || board.is_full() {
-        return evaluate_board(board, ai_stone);
+    if depth == 0 || ctx.board.is_full() {
+        return evaluate_board(ctx.board, ctx.ai_stone);
     }
 
-    let candidates = board.get_candidate_positions();
+    let candidates = ctx.board.get_candidate_positions();
     if candidates.is_empty() {
-        return evaluate_board(board, ai_stone);
+        return evaluate_board(ctx.board, ctx.ai_stone);
     }
 
     let current_stone = if is_maximizing {
-        ai_stone
+        ctx.ai_stone
     } else {
-        ai_stone.opponent()
+        ctx.ai_stone.opponent()
     };
 
     // 获取当前深度的 killer moves
-    let killers = killer_moves.get(depth as usize);
+    let killers = ctx.killer_moves.get(depth as usize);
 
     // 对候选位置排序
-    let sorted_candidates = sort_candidates(board, candidates, current_stone, tt_best_move, killers);
+    let sorted_candidates = sort_candidates(ctx.board, candidates, current_stone, tt_best_move, killers);
 
     let mut best_move = sorted_candidates[0];
     let mut best_score = if is_maximizing { MIN_SCORE } else { MAX_SCORE };
 
     for pos in sorted_candidates {
-        if board.place_stone(pos, current_stone).is_ok() {
-            zobrist.update(pos, current_stone);
+        if ctx.board.place_stone(pos, current_stone).is_ok() {
+            ctx.zobrist.update(pos, current_stone);
 
-            if is_win(board, pos) {
-                zobrist.update(pos, current_stone);
-                board.undo_move(pos);
+            if is_win(ctx.board, pos) {
+                ctx.zobrist.update(pos, current_stone);
+                ctx.board.undo_move(pos);
                 let win_score = if is_maximizing {
                     MAX_SCORE - (10 - depth as i32)
                 } else {
@@ -234,19 +240,15 @@ fn minimax_with_tt(
             }
 
             let eval = minimax_with_tt(
-                board,
-                zobrist,
-                tt,
-                killer_moves,
+                ctx,
                 depth - 1,
                 alpha,
                 beta,
                 !is_maximizing,
-                ai_stone,
             );
 
-            zobrist.update(pos, current_stone);
-            board.undo_move(pos);
+            ctx.zobrist.update(pos, current_stone);
+            ctx.board.undo_move(pos);
 
             if is_maximizing {
                 if eval > best_score {
@@ -264,7 +266,7 @@ fn minimax_with_tt(
 
             if beta <= alpha {
                 // 记录导致剪枝的走法为 killer move
-                killer_moves.add(depth as usize, pos);
+                ctx.killer_moves.add(depth as usize, pos);
                 break;
             }
         }
@@ -279,7 +281,7 @@ fn minimax_with_tt(
         TTFlag::Exact
     };
 
-    tt.store(TTEntry {
+    ctx.tt.store(TTEntry {
         hash,
         depth,
         score: best_score,

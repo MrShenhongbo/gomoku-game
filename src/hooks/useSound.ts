@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // 使用 Web Audio API 生成简单音效
 function createAudioContext(): AudioContext | null {
@@ -38,6 +38,16 @@ export function useSound() {
     return saved !== 'false';
   });
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  // 清理 AudioContext 防止内存泄漏
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
+      }
+    };
+  }, []);
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {

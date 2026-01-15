@@ -1,34 +1,34 @@
 use crate::game::board::BOARD_SIZE;
 use crate::game::types::{Position, Stone};
+use lazy_static::lazy_static;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
-/// Zobrist 哈希表，用于生成棋盘的唯一标识
+// 静态 Zobrist 表，避免每次创建 ZobristHash 时重新计算
+lazy_static! {
+    static ref ZOBRIST_TABLE: [[[u64; 2]; BOARD_SIZE]; BOARD_SIZE] = {
+        let mut table = [[[0u64; 2]; BOARD_SIZE]; BOARD_SIZE];
+        for (row, row_arr) in table.iter_mut().enumerate() {
+            for (col, col_arr) in row_arr.iter_mut().enumerate() {
+                for (stone, val) in col_arr.iter_mut().enumerate() {
+                    let mut hasher = DefaultHasher::new();
+                    (row, col, stone, "zobrist").hash(&mut hasher);
+                    *val = hasher.finish();
+                }
+            }
+        }
+        table
+    };
+}
+
+/// Zobrist 哈希，用于生成棋盘的唯一标识
 pub struct ZobristHash {
-    table: [[[u64; 2]; BOARD_SIZE]; BOARD_SIZE], // [row][col][stone_type]
     pub current_hash: u64,
 }
 
 impl ZobristHash {
     pub fn new() -> Self {
-        use std::collections::hash_map::DefaultHasher;
-        use std::hash::{Hash, Hasher};
-
-        let mut table = [[[0u64; 2]; BOARD_SIZE]; BOARD_SIZE];
-
-        // 使用确定性的方式生成哈希值，避免依赖 rand crate
-        for row in 0..BOARD_SIZE {
-            for col in 0..BOARD_SIZE {
-                for stone in 0..2 {
-                    let mut hasher = DefaultHasher::new();
-                    (row, col, stone, "zobrist").hash(&mut hasher);
-                    table[row][col][stone] = hasher.finish();
-                }
-            }
-        }
-
-        Self {
-            table,
-            current_hash: 0,
-        }
+        Self { current_hash: 0 }
     }
 
     /// 更新哈希值（落子或撤销都使用 XOR）
@@ -37,17 +37,12 @@ impl ZobristHash {
             Stone::Black => 0,
             Stone::White => 1,
         };
-        self.current_hash ^= self.table[pos.row][pos.col][stone_idx];
+        self.current_hash ^= ZOBRIST_TABLE[pos.row][pos.col][stone_idx];
     }
 
     /// 获取当前哈希值
     pub fn hash(&self) -> u64 {
         self.current_hash
-    }
-
-    /// 重置哈希值
-    pub fn reset(&mut self) {
-        self.current_hash = 0;
     }
 }
 
@@ -123,11 +118,6 @@ impl TranspositionTable {
         if should_replace {
             self.entries[idx] = Some(entry);
         }
-    }
-
-    /// 清空置换表
-    pub fn clear(&mut self) {
-        self.entries.fill(None);
     }
 }
 

@@ -111,6 +111,8 @@ cargo clippy
 **AI 优化**：
 - 迭代加深搜索（Iterative Deepening）：从深度 1 逐步搜索到目标深度，利用浅层结果优化深层搜索的走法排序，找到必胜走法时提前返回
 - 置换表（Transposition Table）：使用 Zobrist 哈希缓存已搜索局面，采用固定大小数组（约 100 万条目）+ 位运算取模，避免 HashMap 开销；智能替换策略（相同局面总是更新，不同局面深度更大才替换）
+- Zobrist 表静态化：使用 `lazy_static` 将 Zobrist 表设为全局静态常量，避免每次创建 `ZobristHash` 时重复计算
+- SearchContext 结构体：封装搜索上下文参数（board、zobrist、tt、killer_moves、ai_stone），提高代码可读性
 - Killer Move 启发：记录每个深度导致 Beta 剪枝的走法（每层 2 个），优先搜索这些走法以提升剪枝效率
 - 走法排序优先级：置换表最佳走法 > Killer Move > `quick_evaluate_position` 快速评估分数
 - 按线评估：`evaluate_board` 扫描 88 条线而非 225 个点，避免重复计算
@@ -146,6 +148,11 @@ cargo clippy
 - `Cell` 组件使用 `React.memo` 避免不必要重渲染
 - `winningPositions` 转为 Set 实现 O(1) 查找
 - 回调函数使用 `useCallback` 缓存，确保 memo 生效
+
+**前端代码质量**：
+- AudioContext 清理：`useSound` hook 添加 `useEffect` cleanup 逻辑，组件卸载时关闭 AudioContext 防止内存泄漏
+- API 错误处理：`gameApi.ts` 添加统一的 `invokeWithErrorHandling` 包装函数，所有 Tauri 命令调用都有错误日志
+- 无障碍访问：`Cell` 组件添加 `role="button"`、`aria-label`、`tabIndex` 和键盘导航支持；`Settings` 组件为 emoji 按钮添加 `aria-label`
 
 **UI 布局约束**：所有页面元素必须在单个窗口内完整显示，不允许出现滚动条。添加新 UI 元素时需确保窗口尺寸足够容纳，或优化现有布局。
 

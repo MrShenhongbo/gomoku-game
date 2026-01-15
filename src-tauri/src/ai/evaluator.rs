@@ -16,7 +16,6 @@ const LIVE_ONE: i32 = 10;
 pub fn evaluate_board(board: &Board, ai_stone: Stone) -> i32 {
     let mut ai_score = 0;
     let mut opponent_score = 0;
-    let opponent = ai_stone.opponent();
 
     // 按线扫描而非按点扫描，避免重复计算
     // 水平线 (15条)
@@ -61,7 +60,7 @@ pub fn evaluate_board(board: &Board, ai_stone: Stone) -> i32 {
         opponent_score += opp;
     }
 
-    ai_score - (opponent_score as f32 * 1.1) as i32
+    ai_score - opponent_score - opponent_score / 10
 }
 
 /// 评估一条线上的所有棋型
@@ -76,7 +75,6 @@ fn evaluate_line(
 ) -> (i32, i32) {
     let mut ai_score = 0;
     let mut opponent_score = 0;
-    let opponent = ai_stone.opponent();
 
     let mut r = start_row as i32;
     let mut c = start_col as i32;
@@ -160,25 +158,21 @@ struct LinePattern {
     open_ends: usize,
 }
 
-fn analyze_line(board: &Board, pos: Position, stone: Stone, dr: i32, dc: i32) -> LinePattern {
-    let mut count = 1;
-    let mut open_ends = 0;
-
-    // 正向扫描
-    let (c1, open1) = scan_direction(board, pos, stone, dr, dc);
-    count += c1;
-    if open1 {
-        open_ends += 1;
+fn pattern_score(pattern: &LinePattern) -> i32 {
+    match (pattern.count, pattern.open_ends) {
+        (5.., _) => FIVE,
+        (4, 2) => LIVE_FOUR,
+        (4, 1) => RUSH_FOUR,
+        (4, 0) => 0,
+        (3, 2) => LIVE_THREE,
+        (3, 1) => SLEEP_THREE,
+        (3, 0) => 0,
+        (2, 2) => LIVE_TWO,
+        (2, 1) => SLEEP_TWO,
+        (2, 0) => 0,
+        (1, 2) => LIVE_ONE,
+        _ => 0,
     }
-
-    // 反向扫描
-    let (c2, open2) = scan_direction(board, pos, stone, -dr, -dc);
-    count += c2;
-    if open2 {
-        open_ends += 1;
-    }
-
-    LinePattern { count, open_ends }
 }
 
 fn scan_direction(
@@ -212,23 +206,6 @@ fn scan_direction(
     (count, false) // 到达边界
 }
 
-fn pattern_score(pattern: &LinePattern) -> i32 {
-    match (pattern.count, pattern.open_ends) {
-        (5.., _) => FIVE,
-        (4, 2) => LIVE_FOUR,
-        (4, 1) => RUSH_FOUR,
-        (4, 0) => 0,
-        (3, 2) => LIVE_THREE,
-        (3, 1) => SLEEP_THREE,
-        (3, 0) => 0,
-        (2, 2) => LIVE_TWO,
-        (2, 1) => SLEEP_TWO,
-        (2, 0) => 0,
-        (1, 2) => LIVE_ONE,
-        _ => 0,
-    }
-}
-
 /// 快速评估单个位置的价值（用于候选位置排序）
 /// 评估如果在该位置落子，能形成的棋型价值
 pub fn quick_evaluate_position(board: &Board, pos: Position, stone: Stone) -> i32 {
@@ -249,8 +226,8 @@ pub fn quick_evaluate_position(board: &Board, pos: Position, stone: Stone) -> i3
 
     // 中心位置加分
     let center = BOARD_SIZE / 2;
-    let dist_to_center = ((pos.row as i32 - center as i32).abs()
-        + (pos.col as i32 - center as i32).abs()) as i32;
+    let dist_to_center = (pos.row as i32 - center as i32).abs()
+        + (pos.col as i32 - center as i32).abs();
     score += (10 - dist_to_center).max(0);
 
     score

@@ -97,10 +97,6 @@ impl Board {
         }
     }
 
-    pub fn move_count(&self) -> u32 {
-        self.move_count
-    }
-
     pub fn stone_positions(&self) -> &[Position] {
         &self.stone_positions
     }
