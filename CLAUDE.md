@@ -46,10 +46,10 @@ cargo clippy
 
 ### 测试
 ```bash
-# 运行 Rust 测试（94 个测试）
+# 运行 Rust 测试（151 个测试）
 cd src-tauri && cargo test
 
-# 运行前端测试（47 个测试）
+# 运行前端测试（201 个测试）
 npm run test:run
 
 # 前端测试（监听模式）
@@ -223,9 +223,19 @@ npm run test:coverage
 | `ai/transposition.rs` | 14 | Zobrist 哈希 + 置换表测试 |
 | `ai/evaluator.rs` | 15 | 评估函数测试 |
 | `ai/minimax.rs` | 11 | AI 搜索算法测试 |
+| `commands/game_commands.rs` | 28 | 游戏命令测试 |
+| `commands/puzzle_commands.rs` | 17 | 残局命令测试 |
+| `commands/analysis_commands.rs` | 12 | 分析命令测试 |
+| `hooks/useGame.ts` | 23 | 游戏状态 Hook 测试 |
+| `hooks/useSound.ts` | 15 | 音效 Hook 测试 |
+| `hooks/useKeyboardShortcuts.ts` | 15 | 快捷键 Hook 测试 |
+| `api/gameApi.ts` | 20 | API 封装测试 |
+| `components/Board/` | 34 | 棋盘组件测试 (Cell 17 + Board 17) |
+| `components/Timer/` | 18 | 计时器组件测试 |
+| `components/ControlPanel/` | 23 | 控制面板测试 |
+| `components/ReplayPanel/` | 23 | 复盘面板测试 |
 | `utils/gameHistory.ts` | 24 | 对局记录工具测试 |
 | `contexts/ThemeContext.tsx` | 6 | 主题 Context 测试 |
-| `components/Board/Cell.tsx` | 17 | Cell 组件测试 |
 
 ### CI/CD
 - GitHub Actions 自动运行测试（push/PR 到 main 分支）

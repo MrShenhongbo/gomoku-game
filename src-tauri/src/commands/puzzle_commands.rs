@@ -1256,3 +1256,210 @@ fn create_all_puzzles() -> Vec<Puzzle> {
         },
     ]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // === get_puzzle_list tests ===
+
+    #[test]
+    fn test_get_puzzle_list_returns_all_puzzles() {
+        let list = get_puzzle_list();
+        assert_eq!(list.len(), 50);
+    }
+
+    #[test]
+    fn test_get_puzzle_list_sorted_by_difficulty() {
+        let list = get_puzzle_list();
+
+        // Check that puzzles are sorted by difficulty
+        let mut prev_difficulty = PuzzleDifficulty::Easy;
+        for item in &list {
+            assert!(item.difficulty >= prev_difficulty);
+            prev_difficulty = item.difficulty;
+        }
+    }
+
+    #[test]
+    fn test_get_puzzle_list_same_difficulty_sorted_by_id() {
+        let list = get_puzzle_list();
+
+        // Check Easy puzzles are sorted by ID
+        let easy_puzzles: Vec<_> = list
+            .iter()
+            .filter(|p| p.difficulty == PuzzleDifficulty::Easy)
+            .collect();
+
+        for i in 1..easy_puzzles.len() {
+            assert!(easy_puzzles[i].id > easy_puzzles[i - 1].id);
+        }
+    }
+
+    #[test]
+    fn test_get_puzzle_list_item_has_required_fields() {
+        let list = get_puzzle_list();
+        let first = &list[0];
+
+        assert!(first.id > 0);
+        assert!(!first.name.is_empty());
+        assert!(!first.description.is_empty());
+    }
+
+    // === get_puzzle tests ===
+
+    #[test]
+    fn test_get_puzzle_existing() {
+        let puzzle = get_puzzle(1);
+        assert!(puzzle.is_some());
+
+        let p = puzzle.unwrap();
+        assert_eq!(p.id, 1);
+        assert_eq!(p.name, "直接连五");
+    }
+
+    #[test]
+    fn test_get_puzzle_non_existent() {
+        let puzzle = get_puzzle(999);
+        assert!(puzzle.is_none());
+    }
+
+    #[test]
+    fn test_get_puzzle_contains_required_fields() {
+        let puzzle = get_puzzle(1).unwrap();
+
+        assert!(!puzzle.initial_stones.is_empty());
+        assert!(!puzzle.solutions.is_empty());
+        assert!(!puzzle.hint.is_empty());
+        assert!(!puzzle.player_stone.is_empty());
+    }
+
+    // === check_puzzle_move tests ===
+
+    #[test]
+    fn test_check_puzzle_move_correct_first_move() {
+        // Puzzle 1 has solutions: [(7, 11)] and [(7, 6)]
+        let result = check_puzzle_move(1, vec![(7, 11)]);
+
+        assert!(result.correct);
+        assert!(result.complete); // Single move solution
+    }
+
+    #[test]
+    fn test_check_puzzle_move_correct_complete_solution() {
+        // Puzzle 8 has solution: [(7, 9), (8, 8)]
+        let result = check_puzzle_move(8, vec![(7, 9), (8, 8)]);
+
+        assert!(result.correct);
+        assert!(result.complete);
+        assert!(result.message.contains("完成"));
+    }
+
+    #[test]
+    fn test_check_puzzle_move_correct_partial() {
+        // Puzzle 8 has solution: [(7, 9), (8, 8)]
+        let result = check_puzzle_move(8, vec![(7, 9)]);
+
+        assert!(result.correct);
+        assert!(!result.complete);
+        assert!(result.message.contains("继续"));
+    }
+
+    #[test]
+    fn test_check_puzzle_move_incorrect() {
+        let result = check_puzzle_move(1, vec![(0, 0)]);
+
+        assert!(!result.correct);
+        assert!(!result.complete);
+        assert!(result.message.contains("不正确"));
+    }
+
+    #[test]
+    fn test_check_puzzle_move_non_existent_puzzle() {
+        let result = check_puzzle_move(999, vec![(7, 7)]);
+
+        assert!(!result.correct);
+        assert!(!result.complete);
+        assert!(result.message.contains("不存在"));
+    }
+
+    #[test]
+    fn test_check_puzzle_move_multiple_valid_solutions() {
+        // Puzzle 1 has two solutions: [(7, 11)] and [(7, 6)]
+        let result1 = check_puzzle_move(1, vec![(7, 11)]);
+        let result2 = check_puzzle_move(1, vec![(7, 6)]);
+
+        assert!(result1.correct);
+        assert!(result1.complete);
+        assert!(result2.correct);
+        assert!(result2.complete);
+    }
+
+    // === PuzzleDifficulty ordering tests ===
+
+    #[test]
+    fn test_puzzle_difficulty_ordering() {
+        assert!(PuzzleDifficulty::Easy < PuzzleDifficulty::Medium);
+        assert!(PuzzleDifficulty::Medium < PuzzleDifficulty::Hard);
+        assert!(PuzzleDifficulty::Hard < PuzzleDifficulty::Expert);
+        assert!(PuzzleDifficulty::Expert < PuzzleDifficulty::Master);
+    }
+
+    // === Puzzle data integrity tests ===
+
+    #[test]
+    fn test_all_puzzles_have_valid_initial_stones() {
+        for puzzle in ALL_PUZZLES.iter() {
+            for (row, col, stone) in &puzzle.initial_stones {
+                assert!(*row < 15, "Puzzle {} has invalid row: {}", puzzle.id, row);
+                assert!(*col < 15, "Puzzle {} has invalid col: {}", puzzle.id, col);
+                assert!(
+                    stone == "Black" || stone == "White",
+                    "Puzzle {} has invalid stone: {}",
+                    puzzle.id,
+                    stone
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_all_solutions_within_board_bounds() {
+        for puzzle in ALL_PUZZLES.iter() {
+            for solution in &puzzle.solutions {
+                for (row, col) in solution {
+                    assert!(
+                        *row < 15,
+                        "Puzzle {} solution has invalid row: {}",
+                        puzzle.id,
+                        row
+                    );
+                    assert!(
+                        *col < 15,
+                        "Puzzle {} solution has invalid col: {}",
+                        puzzle.id,
+                        col
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_puzzle_difficulty_distribution() {
+        let list = get_puzzle_list();
+
+        let easy_count = list.iter().filter(|p| p.difficulty == PuzzleDifficulty::Easy).count();
+        let medium_count = list.iter().filter(|p| p.difficulty == PuzzleDifficulty::Medium).count();
+        let hard_count = list.iter().filter(|p| p.difficulty == PuzzleDifficulty::Hard).count();
+        let expert_count = list.iter().filter(|p| p.difficulty == PuzzleDifficulty::Expert).count();
+        let master_count = list.iter().filter(|p| p.difficulty == PuzzleDifficulty::Master).count();
+
+        // Verify we have puzzles at each difficulty level
+        assert!(easy_count > 0, "Should have Easy puzzles");
+        assert!(medium_count > 0, "Should have Medium puzzles");
+        assert!(hard_count > 0, "Should have Hard puzzles");
+        assert!(expert_count > 0, "Should have Expert puzzles");
+        assert!(master_count > 0, "Should have Master puzzles");
+    }
+}

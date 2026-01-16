@@ -197,3 +197,332 @@ pub fn export_game(state: State<GameState>) -> ExportData {
         result,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::game::state::GameStateInner;
+    use crate::game::{GameMode, GameStatus, Position, RuleSet, Stone};
+
+    // Test GameStateInner directly instead of Tauri commands
+    // since Tauri's State type cannot be constructed in tests
+
+    fn create_test_game() -> GameStateInner {
+        GameStateInner::new()
+    }
+
+    // === new_game (set_mode) tests ===
+
+    #[test]
+    fn test_new_game_pvp_default() {
+        let mut game = create_test_game();
+        game.set_mode(GameMode::PvP, None, None, None);
+
+        assert_eq!(game.game_mode, GameMode::PvP);
+        assert_eq!(game.status, GameStatus::Playing);
+        assert_eq!(game.current_player, Stone::Black);
+        assert_eq!(game.move_history.len(), 0);
+    }
+
+    #[test]
+    fn test_new_game_pvai_with_difficulty() {
+        let mut game = create_test_game();
+        game.set_mode(
+            GameMode::PvAI,
+            Some(crate::game::AIDifficulty::Hard),
+            Some(Stone::Black),
+            None,
+        );
+
+        assert_eq!(game.game_mode, GameMode::PvAI);
+        assert_eq!(game.ai_difficulty, crate::game::AIDifficulty::Hard);
+        assert_eq!(game.player_stone, Stone::Black);
+    }
+
+    #[test]
+    fn test_new_game_pvai_player_white() {
+        let mut game = create_test_game();
+        game.set_mode(
+            GameMode::PvAI,
+            Some(crate::game::AIDifficulty::Easy),
+            Some(Stone::White),
+            None,
+        );
+
+        assert_eq!(game.player_stone, Stone::White);
+    }
+
+    #[test]
+    fn test_new_game_aivai() {
+        let mut game = create_test_game();
+        game.set_mode(GameMode::AIvAI, Some(crate::game::AIDifficulty::Medium), None, None);
+
+        assert_eq!(game.game_mode, GameMode::AIvAI);
+    }
+
+    #[test]
+    fn test_new_game_with_renju_rules() {
+        let mut game = create_test_game();
+        game.set_mode(GameMode::PvP, None, None, Some(RuleSet::Renju));
+
+        assert_eq!(game.rule_set, RuleSet::Renju);
+    }
+
+    #[test]
+    fn test_new_game_resets_board() {
+        let mut game = create_test_game();
+
+        // Make some moves first
+        game.make_move(Position::new(7, 7)).unwrap();
+        game.make_move(Position::new(7, 8)).unwrap();
+
+        // Start new game using set_mode which calls reset internally
+        game.set_mode(GameMode::PvP, None, None, None);
+
+        assert_eq!(game.move_history.len(), 0);
+        assert!(game.board.get(Position::new(7, 7)).is_none());
+    }
+
+    // === make_move tests ===
+
+    #[test]
+    fn test_make_move_valid() {
+        let mut game = create_test_game();
+        let result = game.make_move(Position::new(7, 7));
+
+        assert!(result.is_ok());
+        assert_eq!(game.move_history.len(), 1);
+        assert_eq!(game.current_player, Stone::White);
+    }
+
+    #[test]
+    fn test_make_move_occupied_position() {
+        let mut game = create_test_game();
+        game.make_move(Position::new(7, 7)).unwrap();
+
+        let result = game.make_move(Position::new(7, 7));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_make_move_invalid_position() {
+        let mut game = create_test_game();
+        let result = game.make_move(Position::new(15, 15));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_make_move_win_detection() {
+        let mut game = create_test_game();
+
+        // Create a winning position for Black
+        // Black: (7,7), (7,8), (7,9), (7,10)
+        // White: (8,7), (8,8), (8,9), (8,10)
+        game.make_move(Position::new(7, 7)).unwrap(); // Black
+        game.make_move(Position::new(8, 7)).unwrap(); // White
+        game.make_move(Position::new(7, 8)).unwrap(); // Black
+        game.make_move(Position::new(8, 8)).unwrap(); // White
+        game.make_move(Position::new(7, 9)).unwrap(); // Black
+        game.make_move(Position::new(8, 9)).unwrap(); // White
+        game.make_move(Position::new(7, 10)).unwrap(); // Black
+        game.make_move(Position::new(8, 10)).unwrap(); // White
+
+        // Winning move for Black
+        game.make_move(Position::new(7, 11)).unwrap();
+
+        assert_eq!(game.status, GameStatus::BlackWin);
+    }
+
+    #[test]
+    fn test_make_move_game_over() {
+        let mut game = create_test_game();
+        game.status = GameStatus::BlackWin;
+
+        let result = game.make_move(Position::new(0, 0));
+        assert!(result.is_err());
+    }
+
+    // === undo_move tests ===
+
+    #[test]
+    fn test_undo_move_pvp() {
+        let mut game = create_test_game();
+        game.make_move(Position::new(7, 7)).unwrap();
+        game.make_move(Position::new(7, 8)).unwrap();
+
+        let result = game.undo_move();
+
+        assert!(result.is_ok());
+        // In PvP, only one move is undone
+        assert_eq!(game.move_history.len(), 1);
+    }
+
+    #[test]
+    fn test_undo_move_pvai() {
+        let mut game = create_test_game();
+        game.set_mode(
+            GameMode::PvAI,
+            Some(crate::game::AIDifficulty::Easy),
+            Some(Stone::Black),
+            None,
+        );
+
+        // Simulate player and AI moves
+        game.make_move(Position::new(7, 7)).unwrap(); // Player (Black)
+        game.make_move(Position::new(7, 8)).unwrap(); // AI (White)
+
+        // Undo both moves manually (as the command would do)
+        game.undo_move().unwrap();
+        game.undo_move().unwrap();
+
+        assert_eq!(game.move_history.len(), 0);
+    }
+
+    #[test]
+    fn test_undo_move_empty_history() {
+        let mut game = create_test_game();
+        let result = game.undo_move();
+        assert!(result.is_err());
+    }
+
+    // === surrender tests ===
+
+    #[test]
+    fn test_surrender_black() {
+        let mut game = create_test_game();
+        // Black's turn
+        let result = game.surrender();
+
+        assert!(result.is_ok());
+        assert_eq!(game.status, GameStatus::WhiteWin);
+    }
+
+    #[test]
+    fn test_surrender_white() {
+        let mut game = create_test_game();
+        game.make_move(Position::new(7, 7)).unwrap(); // Black moves
+
+        // White's turn
+        let result = game.surrender();
+
+        assert!(result.is_ok());
+        assert_eq!(game.status, GameStatus::BlackWin);
+    }
+
+    #[test]
+    fn test_surrender_game_over() {
+        let mut game = create_test_game();
+        game.status = GameStatus::BlackWin;
+
+        let result = game.surrender();
+        assert!(result.is_err());
+    }
+
+    // === move_history tests ===
+
+    #[test]
+    fn test_move_history_empty() {
+        let game = create_test_game();
+        assert!(game.move_history.is_empty());
+    }
+
+    #[test]
+    fn test_move_history_with_moves() {
+        let mut game = create_test_game();
+        game.make_move(Position::new(7, 7)).unwrap();
+        game.make_move(Position::new(7, 8)).unwrap();
+
+        assert_eq!(game.move_history.len(), 2);
+        assert_eq!(game.move_history[0].position, Position::new(7, 7));
+        assert_eq!(game.move_history[0].stone, Stone::Black);
+        assert_eq!(game.move_history[1].position, Position::new(7, 8));
+        assert_eq!(game.move_history[1].stone, Stone::White);
+    }
+
+    // === game status tests ===
+
+    #[test]
+    fn test_game_status_playing() {
+        let game = create_test_game();
+        assert_eq!(game.status, GameStatus::Playing);
+    }
+
+    #[test]
+    fn test_game_status_black_win() {
+        let mut game = create_test_game();
+        game.status = GameStatus::BlackWin;
+        assert_eq!(game.status, GameStatus::BlackWin);
+    }
+
+    #[test]
+    fn test_game_status_white_win() {
+        let mut game = create_test_game();
+        game.status = GameStatus::WhiteWin;
+        assert_eq!(game.status, GameStatus::WhiteWin);
+    }
+
+    #[test]
+    fn test_game_status_draw() {
+        let mut game = create_test_game();
+        game.status = GameStatus::Draw;
+        assert_eq!(game.status, GameStatus::Draw);
+    }
+
+    // === game mode and rules tests ===
+
+    #[test]
+    fn test_game_mode_pvp() {
+        let mut game = create_test_game();
+        game.set_mode(GameMode::PvP, None, None, None);
+        assert_eq!(game.game_mode, GameMode::PvP);
+    }
+
+    #[test]
+    fn test_game_mode_pvai() {
+        let mut game = create_test_game();
+        game.set_mode(GameMode::PvAI, None, None, None);
+        assert_eq!(game.game_mode, GameMode::PvAI);
+    }
+
+    #[test]
+    fn test_rule_set_standard() {
+        let mut game = create_test_game();
+        game.set_mode(GameMode::PvP, None, None, Some(RuleSet::Standard));
+        assert_eq!(game.rule_set, RuleSet::Standard);
+    }
+
+    #[test]
+    fn test_rule_set_renju() {
+        let mut game = create_test_game();
+        game.set_mode(GameMode::PvP, None, None, Some(RuleSet::Renju));
+        assert_eq!(game.rule_set, RuleSet::Renju);
+    }
+
+    // === GameSnapshot tests ===
+
+    #[test]
+    fn test_snapshot_contains_correct_data() {
+        use crate::game::GameSnapshot;
+
+        let mut game = create_test_game();
+        game.make_move(Position::new(7, 7)).unwrap();
+
+        let snapshot = GameSnapshot::from(&game);
+
+        assert_eq!(snapshot.move_count, 1);
+        assert_eq!(snapshot.current_player, Stone::White);
+        assert!(snapshot.last_move.is_some());
+        assert_eq!(snapshot.last_move.unwrap(), Position::new(7, 7));
+    }
+
+    #[test]
+    fn test_snapshot_board_state() {
+        use crate::game::GameSnapshot;
+
+        let mut game = create_test_game();
+        game.make_move(Position::new(7, 7)).unwrap();
+
+        let snapshot = GameSnapshot::from(&game);
+
+        assert_eq!(snapshot.board[7][7], Some(Stone::Black));
+    }
+}

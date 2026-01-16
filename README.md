@@ -215,10 +215,10 @@ npm run tauri dev
 # 检查 Rust 代码
 cd src-tauri && cargo check
 
-# 运行 Rust 测试
+# 运行 Rust 测试（151 个测试）
 cd src-tauri && cargo test
 
-# 运行前端测试
+# 运行前端测试（201 个测试）
 npm run test:run
 
 # 前端测试覆盖率
@@ -230,6 +230,14 @@ cd src-tauri && cargo fmt
 # Lint 检查
 cd src-tauri && cargo clippy
 ```
+
+### 测试统计
+
+| 类别 | 测试数量 | 说明 |
+|------|---------|------|
+| **Rust 后端** | 151 | 游戏逻辑、AI、命令处理 |
+| **前端** | 201 | 组件、Hooks、API、工具函数 |
+| **总计** | 352 | - |
 
 ### 报告问题
 

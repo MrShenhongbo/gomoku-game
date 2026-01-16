@@ -176,3 +176,136 @@ fn is_near_stone(board: &crate::game::board::Board, pos: Position) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game::board::Board;
+    use crate::game::Stone;
+
+    // === is_near_stone tests ===
+
+    #[test]
+    fn test_is_near_stone_adjacent() {
+        let mut board = Board::new();
+        board.place_stone(Position::new(7, 7), Stone::Black).unwrap();
+
+        // Adjacent positions should return true
+        assert!(is_near_stone(&board, Position::new(7, 8)));
+        assert!(is_near_stone(&board, Position::new(6, 7)));
+        assert!(is_near_stone(&board, Position::new(8, 8)));
+    }
+
+    #[test]
+    fn test_is_near_stone_two_cells_away() {
+        let mut board = Board::new();
+        board.place_stone(Position::new(7, 7), Stone::Black).unwrap();
+
+        // 2 cells away should return true
+        assert!(is_near_stone(&board, Position::new(7, 9)));
+        assert!(is_near_stone(&board, Position::new(5, 7)));
+        assert!(is_near_stone(&board, Position::new(9, 9)));
+    }
+
+    #[test]
+    fn test_is_near_stone_three_cells_away() {
+        let mut board = Board::new();
+        board.place_stone(Position::new(7, 7), Stone::Black).unwrap();
+
+        // 3+ cells away should return false
+        assert!(!is_near_stone(&board, Position::new(7, 10)));
+        assert!(!is_near_stone(&board, Position::new(4, 7)));
+        assert!(!is_near_stone(&board, Position::new(10, 10)));
+    }
+
+    #[test]
+    fn test_is_near_stone_empty_board_center() {
+        let board = Board::new();
+        let center = BOARD_SIZE / 2;
+
+        // Center position should return true on empty board
+        assert!(is_near_stone(&board, Position::new(center, center)));
+    }
+
+    #[test]
+    fn test_is_near_stone_empty_board_non_center() {
+        let board = Board::new();
+
+        // Non-center positions should return false on empty board
+        assert!(!is_near_stone(&board, Position::new(0, 0)));
+        assert!(!is_near_stone(&board, Position::new(14, 14)));
+    }
+
+    // === pos_to_coord tests ===
+
+    #[test]
+    fn test_pos_to_coord_top_left() {
+        let coord = pos_to_coord(Position::new(0, 0));
+        assert_eq!(coord, "A15");
+    }
+
+    #[test]
+    fn test_pos_to_coord_center() {
+        let coord = pos_to_coord(Position::new(7, 7));
+        assert_eq!(coord, "H8");
+    }
+
+    #[test]
+    fn test_pos_to_coord_bottom_right() {
+        let coord = pos_to_coord(Position::new(14, 14));
+        assert_eq!(coord, "O1");
+    }
+
+    // === AnalysisResult structure tests ===
+
+    #[test]
+    fn test_analysis_result_structure() {
+        let result = AnalysisResult {
+            board_score: 100,
+            evaluation: "小优".to_string(),
+            top_moves: vec![CandidateMove {
+                position: Position::new(7, 7),
+                score: 500,
+                coord: "H8".to_string(),
+            }],
+            threat_points: vec![ThreatPoint {
+                position: Position::new(7, 8),
+                threat_type: "threat".to_string(),
+                level: 2,
+            }],
+        };
+
+        assert_eq!(result.board_score, 100);
+        assert_eq!(result.evaluation, "小优");
+        assert_eq!(result.top_moves.len(), 1);
+        assert_eq!(result.threat_points.len(), 1);
+    }
+
+    #[test]
+    fn test_candidate_move_structure() {
+        let candidate = CandidateMove {
+            position: Position::new(7, 7),
+            score: 1000,
+            coord: "H8".to_string(),
+        };
+
+        assert_eq!(candidate.position.row, 7);
+        assert_eq!(candidate.position.col, 7);
+        assert_eq!(candidate.score, 1000);
+        assert_eq!(candidate.coord, "H8");
+    }
+
+    #[test]
+    fn test_threat_point_structure() {
+        let threat = ThreatPoint {
+            position: Position::new(7, 8),
+            threat_type: "opportunity".to_string(),
+            level: 3,
+        };
+
+        assert_eq!(threat.position.row, 7);
+        assert_eq!(threat.position.col, 8);
+        assert_eq!(threat.threat_type, "opportunity");
+        assert_eq!(threat.level, 3);
+    }
+}
