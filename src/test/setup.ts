@@ -8,12 +8,12 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 // Mock requestAnimationFrame for useGame tests
-global.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
+globalThis.requestAnimationFrame = vi.fn((cb: FrameRequestCallback) => {
   setTimeout(() => cb(0), 0);
   return 0;
 });
 
-global.cancelAnimationFrame = vi.fn();
+globalThis.cancelAnimationFrame = vi.fn();
 
 // Test utility functions
 export function createMockGameSnapshot(overrides: Partial<GameSnapshot> = {}): GameSnapshot {

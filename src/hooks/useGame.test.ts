@@ -309,8 +309,8 @@ describe('useGame', () => {
         success: true,
         game_over: false,
         status: 'Playing',
-        current_player: 'White',
-        winning_positions: null
+        winning_positions: null,
+        last_move: { row: 7, col: 7 }
       });
 
       const { result } = renderHook(() => useGame());
