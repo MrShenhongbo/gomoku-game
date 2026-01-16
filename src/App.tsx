@@ -1,6 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { save, open } from '@tauri-apps/plugin-dialog';
-import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { Board } from './components/Board/Board';
 import { GameInfo } from './components/GameInfo/GameInfo';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
@@ -15,9 +13,13 @@ import { GameHistory } from './components/GameHistory/GameHistory';
 import { useGame } from './hooks/useGame';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSound } from './hooks/useSound';
-import * as api from './api/gameApi';
-import type { AnalysisResult, ExportData, GameRecord, Move, Position, Stone } from './types/game';
-import { saveGameRecord, calculateQualityScore, formatDate } from './utils/gameHistory';
+import { useReplay } from './hooks/useReplay';
+import { useAnalysis } from './hooks/useAnalysis';
+import { useAIvAI } from './hooks/useAIvAI';
+import { useGameExport } from './hooks/useGameExport';
+import { useGameRecord } from './hooks/useGameRecord';
+import { useGameTimer } from './hooks/useGameTimer';
+import type { GameRecord } from './types/game';
 import './App.css';
 
 type ConfirmAction = 'newGame' | 'surrender' | null;
@@ -40,33 +42,22 @@ function App() {
 
   const { soundEnabled, toggleSound, playPlaceSound, playWinSound, playLoseSound } = useSound();
 
+  // 使用新的自定义 Hooks
+  const replay = useReplay();
+  const analysis = useAnalysis(gameState?.move_count ?? 0);
+  const aivai = useAIvAI(gameState, fetchGameState);
+  const gameExport = useGameExport();
+  const gameRecord = useGameRecord();
+  const gameTimer = useGameTimer();
+
+  // 界面显示控制
   const [showModeSelector, setShowModeSelector] = useState(true);
   const [showPuzzleMode, setShowPuzzleMode] = useState(false);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
-  const [timerConfig, setTimerConfig] = useState<TimerConfig>({ mode: 'none', seconds: 30 });
-  const [timerKey, setTimerKey] = useState(0);
+
+  // 音效追踪
   const prevMoveCountRef = useRef(0);
   const prevStatusRef = useRef<string | null>(null);
-
-  // AIvAI 模式状态
-  const [aivaiConfig, setAivaiConfig] = useState<AIvAIConfig | null>(null);
-  const [aivaiPaused, setAivaiPaused] = useState(false);
-  const aivaiIntervalRef = useRef<number | null>(null);
-
-  // 分析面板状态
-  const [showAnalysis, setShowAnalysis] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-
-  // 复盘状态
-  const [showReplay, setShowReplay] = useState(false);
-  const [replayMoves, setReplayMoves] = useState<Move[]>([]);
-  const [replayStep, setReplayStep] = useState(0);
-
-  // 对局记录状态
-  const [showHistory, setShowHistory] = useState(false);
-  const [gameStartTime, setGameStartTime] = useState<number | null>(null);
-  const gameRecordSavedRef = useRef(false);
 
   // 监听落子播放音效 + 游戏结束保存记录
   useEffect(() => {
@@ -81,38 +72,8 @@ function App() {
     // 游戏结束音效 + 保存记录
     if (prevStatusRef.current === 'Playing' && gameState.status !== 'Playing') {
       // 保存对局记录
-      if (!gameRecordSavedRef.current && gameState.move_count > 0) {
-        const saveRecord = async () => {
-          try {
-            const historyResult = await api.getMoveHistory();
-            const duration = gameStartTime ? Math.floor((Date.now() - gameStartTime) / 1000) : undefined;
-            const qualityScore = calculateQualityScore(
-              historyResult.moves,
-              gameState.status,
-              gameState.game_mode,
-              gameState.ai_difficulty,
-              gameState.player_stone
-            );
-            const record: GameRecord = {
-              id: Date.now().toString(),
-              date: formatDate(new Date()),
-              gameMode: gameState.game_mode,
-              ruleSet: gameState.rule_set,
-              result: gameState.status,
-              playerStone: gameState.game_mode === 'PvAI' ? gameState.player_stone : undefined,
-              aiDifficulty: gameState.game_mode === 'PvAI' ? gameState.ai_difficulty : undefined,
-              moves: historyResult.moves,
-              moveCount: gameState.move_count,
-              qualityScore,
-              duration,
-            };
-            saveGameRecord(record);
-            gameRecordSavedRef.current = true;
-          } catch (e) {
-            console.error('Failed to save game record:', e);
-          }
-        };
-        saveRecord();
+      if (!gameRecord.isRecordSaved()) {
+        gameRecord.saveRecord(gameState);
       }
 
       // 音效
@@ -132,62 +93,14 @@ function App() {
       }
     }
     prevStatusRef.current = gameState.status;
-  }, [gameState, playPlaceSound, playWinSound, playLoseSound, gameStartTime]);
-
-  // AIvAI 自动对弈
-  useEffect(() => {
-    if (!gameState || gameState.game_mode !== 'AIvAI' || !aivaiConfig) return;
-    if (gameState.status !== 'Playing' || aivaiPaused) {
-      if (aivaiIntervalRef.current) {
-        clearTimeout(aivaiIntervalRef.current);
-        aivaiIntervalRef.current = null;
-      }
-      return;
-    }
-
-    const makeAIMove = async () => {
-      try {
-        await api.aiMove();
-        await fetchGameState();
-      } catch (e) {
-        console.error('AI move error:', e);
-      }
-    };
-
-    aivaiIntervalRef.current = window.setTimeout(makeAIMove, aivaiConfig.speed);
-
-    return () => {
-      if (aivaiIntervalRef.current) {
-        clearTimeout(aivaiIntervalRef.current);
-        aivaiIntervalRef.current = null;
-      }
-    };
-  }, [gameState, aivaiConfig, aivaiPaused, fetchGameState]);
-
-  // 落子后自动刷新分析
-  useEffect(() => {
-    if (showAnalysis && gameState && gameState.move_count > 0 && !isAnalyzing) {
-      const doAnalysis = async () => {
-        setIsAnalyzing(true);
-        try {
-          const result = await api.analyzePosition();
-          setAnalysisResult(result);
-        } catch (e) {
-          console.error('Analysis error:', e);
-        } finally {
-          setIsAnalyzing(false);
-        }
-      };
-      doAnalysis();
-    }
-  }, [gameState?.move_count, showAnalysis]);
+  }, [gameState, playPlaceSound, playWinSound, playLoseSound, gameRecord]);
 
   const handleStartGame = (
     mode: 'PvP' | 'PvAI' | 'AIvAI' | 'Puzzle',
     difficulty?: 'Easy' | 'Medium' | 'Hard',
     playerStone?: 'Black' | 'White',
     timer?: TimerConfig,
-    aivai?: AIvAIConfig,
+    aivaiConfig?: AIvAIConfig,
     ruleSet?: 'Standard' | 'Renju'
   ) => {
     if (mode === 'Puzzle') {
@@ -195,25 +108,20 @@ function App() {
       setShowModeSelector(false);
       return;
     }
-    if (mode === 'AIvAI' && aivai) {
-      // AIvAI 模式使用黑棋难度作为默认难度
-      startNewGame(mode, aivai.blackDifficulty, 'Black', ruleSet);
-      setAivaiConfig(aivai);
-      setAivaiPaused(false);
+    if (mode === 'AIvAI' && aivaiConfig) {
+      startNewGame(mode, aivaiConfig.blackDifficulty, 'Black', ruleSet);
+      aivai.startAIvAI(aivaiConfig);
     } else {
       startNewGame(mode, difficulty, playerStone, ruleSet);
-      setAivaiConfig(null);
+      aivai.stopAIvAI();
     }
     setShowModeSelector(false);
-    setShowAnalysis(false);
-    setAnalysisResult(null);
+    analysis.resetAnalysis();
     prevMoveCountRef.current = 0;
     prevStatusRef.current = 'Playing';
-    setGameStartTime(Date.now());
-    gameRecordSavedRef.current = false;
+    gameRecord.startRecording();
     if (timer) {
-      setTimerConfig(timer);
-      setTimerKey((k) => k + 1);
+      gameTimer.setTimerConfig(timer);
     }
   };
 
@@ -223,11 +131,10 @@ function App() {
     } else {
       setShowModeSelector(true);
       setShowPuzzleMode(false);
-      setAivaiConfig(null);
-      setShowAnalysis(false);
-      setAnalysisResult(null);
+      aivai.stopAIvAI();
+      analysis.resetAnalysis();
     }
-  }, [gameState]);
+  }, [gameState, aivai, analysis]);
 
   const handleSurrenderClick = () => {
     setConfirmAction('surrender');
@@ -237,9 +144,8 @@ function App() {
     if (confirmAction === 'newGame') {
       setShowModeSelector(true);
       setShowPuzzleMode(false);
-      setAivaiConfig(null);
-      setShowAnalysis(false);
-      setAnalysisResult(null);
+      aivai.stopAIvAI();
+      analysis.resetAnalysis();
     } else if (confirmAction === 'surrender') {
       handleSurrender();
     }
@@ -254,10 +160,6 @@ function App() {
     handleSurrender();
   }, [handleSurrender]);
 
-  const handleTogglePause = useCallback(() => {
-    setAivaiPaused((p) => !p);
-  }, []);
-
   const handlePuzzleBack = useCallback(() => {
     setShowPuzzleMode(false);
     setShowModeSelector(true);
@@ -265,130 +167,31 @@ function App() {
 
   // 分析功能
   const handleAnalysis = useCallback(async () => {
-    if (showAnalysis) {
-      // 如果已打开，执行刷新分析
-      setIsAnalyzing(true);
-      try {
-        const result = await api.analyzePosition();
-        setAnalysisResult(result);
-      } catch (e) {
-        console.error('Analysis error:', e);
-      } finally {
-        setIsAnalyzing(false);
-      }
+    if (analysis.showAnalysis) {
+      await analysis.refreshAnalysis();
     } else {
-      // 首次打开，执行分析
-      setShowAnalysis(true);
-      setIsAnalyzing(true);
-      try {
-        const result = await api.analyzePosition();
-        setAnalysisResult(result);
-      } catch (e) {
-        console.error('Analysis error:', e);
-      } finally {
-        setIsAnalyzing(false);
-      }
+      await analysis.openAnalysis();
     }
-  }, [showAnalysis]);
-
-  const handleAnalysisClose = useCallback(() => {
-    setShowAnalysis(false);
-  }, []);
-
-  // 复盘功能
-  const handleReplay = useCallback(async () => {
-    try {
-      const result = await api.getMoveHistory();
-      setReplayMoves(result.moves);
-      setReplayStep(result.moves.length);
-      setShowReplay(true);
-    } catch (e) {
-      console.error('Failed to get move history:', e);
-    }
-  }, []);
-
-  const handleReplayStepChange = useCallback((step: number) => {
-    setReplayStep(step);
-  }, []);
-
-  const handleReplayClose = useCallback(() => {
-    setShowReplay(false);
-    setReplayMoves([]);
-    setReplayStep(0);
-  }, []);
+  }, [analysis]);
 
   // 从历史记录复盘
-  const handleHistoryReplay = useCallback((record: GameRecord) => {
-    setReplayMoves(record.moves);
-    setReplayStep(record.moves.length);
-    setShowReplay(true);
-    setShowHistory(false);
-  }, []);
-
-  const handleShowHistory = useCallback(() => {
-    setShowHistory(true);
-  }, []);
-
-  const handleHistoryBack = useCallback(() => {
-    setShowHistory(false);
-  }, []);
-
-  // 导出棋谱
-  const handleExport = useCallback(async () => {
-    try {
-      const data = await api.exportGame();
-      const filePath = await save({
-        filters: [{ name: '棋谱文件', extensions: ['json'] }],
-        defaultPath: `gomoku_${new Date().toISOString().slice(0, 10)}.json`,
-      });
-      if (filePath) {
-        await writeTextFile(filePath, JSON.stringify(data, null, 2));
-      }
-    } catch (e) {
-      console.error('Failed to export game:', e);
-    }
-  }, []);
+  const handleHistoryReplay = useCallback(
+    (record: GameRecord) => {
+      replay.startReplayFromRecord(record);
+      gameRecord.closeHistory();
+    },
+    [replay, gameRecord]
+  );
 
   // 导入棋谱
   const handleImport = useCallback(async () => {
-    try {
-      const filePath = await open({
-        filters: [{ name: '棋谱文件', extensions: ['json'] }],
-        multiple: false,
-      });
-      if (filePath) {
-        const content = await readTextFile(filePath as string);
-        const data: ExportData = JSON.parse(content);
-        // 验证数据格式
-        if (!data.moves || !Array.isArray(data.moves)) {
-          alert('无效的棋谱文件');
-          return;
-        }
-        // 进入复盘模式
-        setReplayMoves(data.moves);
-        setReplayStep(data.moves.length);
-        setShowReplay(true);
-        setShowModeSelector(false);
-        setShowHistory(false);
-      }
-    } catch (e) {
-      console.error('Failed to import game:', e);
+    const moves = await gameExport.importGame();
+    if (moves) {
+      replay.startReplayFromMoves(moves);
+      setShowModeSelector(false);
+      gameRecord.closeHistory();
     }
-  }, []);
-
-  const getReplayBoard = useCallback((step: number): (Stone | null)[][] => {
-    const board: (Stone | null)[][] = Array(15).fill(null).map(() => Array(15).fill(null));
-    for (let i = 0; i < step && i < replayMoves.length; i++) {
-      const move = replayMoves[i];
-      board[move.position.row][move.position.col] = move.stone;
-    }
-    return board;
-  }, [replayMoves]);
-
-  const getReplayLastMove = useCallback((step: number): Position | null => {
-    if (step === 0 || replayMoves.length === 0) return null;
-    return replayMoves[step - 1].position;
-  }, [replayMoves]);
+  }, [gameExport, replay, gameRecord]);
 
   // 键盘快捷键
   useKeyboardShortcuts({
@@ -411,10 +214,10 @@ function App() {
       <Settings
         soundEnabled={soundEnabled}
         onToggleSound={toggleSound}
-        showHistoryBtn={showModeSelector && !showHistory && !showPuzzleMode}
-        onShowHistory={handleShowHistory}
-        onExport={!showModeSelector && !showReplay && !showPuzzleMode && !showHistory ? handleExport : undefined}
-        onImport={!showReplay && !showPuzzleMode && !showHistory && (showModeSelector || gameState.status !== 'Playing') ? handleImport : undefined}
+        showHistoryBtn={showModeSelector && !gameRecord.showHistory && !showPuzzleMode}
+        onShowHistory={gameRecord.openHistory}
+        onExport={!showModeSelector && !replay.showReplay && !showPuzzleMode && !gameRecord.showHistory ? gameExport.exportGame : undefined}
+        onImport={!replay.showReplay && !showPuzzleMode && !gameRecord.showHistory && (showModeSelector || gameState.status !== 'Playing') ? handleImport : undefined}
         canExport={gameState.move_count > 0}
       />
 
@@ -422,14 +225,14 @@ function App() {
 
       {showPuzzleMode ? (
         <PuzzleMode onBack={handlePuzzleBack} />
-      ) : showHistory ? (
-        <GameHistory onBack={handleHistoryBack} onReplay={handleHistoryReplay} />
-      ) : showReplay ? (
+      ) : gameRecord.showHistory ? (
+        <GameHistory onBack={gameRecord.closeHistory} onReplay={handleHistoryReplay} />
+      ) : replay.showReplay ? (
         <div className="game-layout replay-layout">
           <div className="game-main replay-main">
             <Board
-              board={getReplayBoard(replayStep)}
-              lastMove={getReplayLastMove(replayStep)}
+              board={replay.getReplayBoard(replay.replayStep)}
+              lastMove={replay.getReplayLastMove(replay.replayStep)}
               winningPositions={null}
               hintPosition={null}
               onCellClick={() => {}}
@@ -437,14 +240,14 @@ function App() {
             />
           </div>
           <ReplayPanel
-            moves={replayMoves.map(m => ({
+            moves={replay.replayMoves.map((m) => ({
               position: m.position,
               stone: m.stone,
               moveNumber: m.move_number,
             }))}
-            currentStep={replayStep}
-            onStepChange={handleReplayStepChange}
-            onClose={handleReplayClose}
+            currentStep={replay.replayStep}
+            onStepChange={replay.setReplayStep}
+            onClose={replay.closeReplay}
           />
         </div>
       ) : showModeSelector ? (
@@ -454,15 +257,12 @@ function App() {
       ) : (
         <div className="game-layout">
           <div className="game-main">
-            <GameInfo
-              gameState={gameState}
-              isAIThinking={isAIThinking}
-            />
+            <GameInfo gameState={gameState} isAIThinking={isAIThinking} />
             {!isAIvAI && (
               <Timer
-                key={timerKey}
-                mode={timerConfig.mode}
-                seconds={timerConfig.seconds}
+                key={gameTimer.timerKey}
+                mode={gameTimer.timerConfig.mode}
+                seconds={gameTimer.timerConfig.seconds}
                 currentPlayer={gameState.current_player}
                 isPlaying={gameState.status === 'Playing' && !isLoading && !isAIThinking}
                 onTimeout={handleTimeout}
@@ -471,52 +271,40 @@ function App() {
             {isAIvAI && gameState.status === 'Playing' && (
               <div className="aivai-controls">
                 <button
-                  className={`aivai-btn ${aivaiPaused ? 'paused' : 'playing'}`}
-                  onClick={handleTogglePause}
+                  className={`aivai-btn ${aivai.aivaiPaused ? 'paused' : 'playing'}`}
+                  onClick={aivai.togglePause}
                 >
-                  {aivaiPaused ? '▶ 继续' : '⏸ 暂停'}
+                  {aivai.aivaiPaused ? '▶ 继续' : '⏸ 暂停'}
                 </button>
               </div>
             )}
             <Board
-              board={showReplay ? getReplayBoard(replayStep) : gameState.board}
-              lastMove={showReplay ? getReplayLastMove(replayStep) : gameState.last_move}
-              winningPositions={showReplay ? null : gameState.winning_positions}
-              hintPosition={showReplay ? null : hintPosition}
+              board={gameState.board}
+              lastMove={gameState.last_move}
+              winningPositions={gameState.winning_positions}
+              hintPosition={hintPosition}
               onCellClick={handleCellClick}
-              disabled={isLoading || gameState.status !== 'Playing' || isAIvAI || showReplay}
+              disabled={isLoading || gameState.status !== 'Playing' || isAIvAI}
             />
             <ControlPanel
               gameState={gameState}
               isLoading={isLoading}
               isGettingHint={isGettingHint}
-              isAnalyzing={isAnalyzing}
+              isAnalyzing={analysis.isAnalyzing}
               onNewGame={handleNewGameClick}
               onUndo={handleUndo}
               onGetHint={handleGetHint}
               onSurrender={handleSurrenderClick}
               onAnalysis={handleAnalysis}
-              onReplay={handleReplay}
+              onReplay={replay.startReplay}
             />
           </div>
           <AnalysisPanel
-            isOpen={showAnalysis}
-            isLoading={isAnalyzing}
-            analysis={analysisResult}
-            onClose={handleAnalysisClose}
+            isOpen={analysis.showAnalysis}
+            isLoading={analysis.isAnalyzing}
+            analysis={analysis.analysisResult}
+            onClose={analysis.closeAnalysis}
           />
-          {showReplay && (
-            <ReplayPanel
-              moves={replayMoves.map(m => ({
-                position: m.position,
-                stone: m.stone,
-                moveNumber: m.move_number,
-              }))}
-              currentStep={replayStep}
-              onStepChange={handleReplayStepChange}
-              onClose={handleReplayClose}
-            />
-          )}
         </div>
       )}
 
