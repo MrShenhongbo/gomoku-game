@@ -160,7 +160,7 @@
   font-size: 0.8rem;
 }
 
-.threist {
+.threat-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -171,6 +171,7 @@
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .threat-item.threat {
